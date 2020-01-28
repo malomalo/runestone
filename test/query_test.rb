@@ -1,0 +1,129 @@
+require 'test_helper'
+
+class QueryTest < ActiveSupport::TestCase
+
+  test '::search(query)' do
+    query = Runestone::Model.search('seaerch for this')
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'seaerch & for & this:*')) AS rank0
+      FROM "runestones"
+      WHERE "runestones"."vector" @@ to_tsquery('simple_unaccent', 'seaerch & for & this:*')
+      ORDER BY rank0 DESC
+    SQL
+  end
+  
+  test '::search(query) normalizes Unicode strings' do
+    query = Runestone::Model.search("the search for \u0065\u0301")
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'the & search & for & \u00e9:*')) AS rank0
+      FROM "runestones"
+      WHERE "runestones"."vector" @@ to_tsquery('simple_unaccent', 'the & search & for & \u00e9:*')
+      ORDER BY rank0 DESC
+    SQL
+  end
+  
+  test "::search(query with ')" do
+    query = Runestone::Model.search("seaerch for ' this")
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'seaerch & for & this:*')) AS rank0
+      FROM "runestones"
+      WHERE "runestones"."vector" @@ to_tsquery('simple_unaccent', 'seaerch & for & this:*')
+      ORDER BY rank0 DESC
+    SQL
+    
+    query = Runestone::Model.search("seaerch for james' map")
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'seaerch & for & james'' & map:*')) AS rank0
+      FROM "runestones"
+      WHERE "runestones"."vector" @@ to_tsquery('simple_unaccent', 'seaerch & for & james'' & map:*')
+      ORDER BY rank0 DESC
+    SQL
+  end
+  
+  test '::search(query, prefix: :all)' do
+    query = Runestone::Model.search('seaerch for this', prefix: :all)
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'seaerch:* & for:* & this:*')) AS rank0
+      FROM "runestones"
+      WHERE "runestones"."vector" @@ to_tsquery('simple_unaccent', 'seaerch:* & for:* & this:*')
+      ORDER BY rank0 DESC
+    SQL
+  end
+  
+  test '::search(query).limit(N)' do
+    query = Runestone::Model.search('seaerch for this').limit(10)
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'seaerch & for & this:*')) AS rank0
+      FROM "runestones"
+      WHERE "runestones"."vector" @@ to_tsquery('simple_unaccent', 'seaerch & for & this:*')
+      ORDER BY rank0 DESC
+      LIMIT 10
+    SQL
+  end
+  
+  test 'Model::search(query)' do
+    query = Property.search('seaerch for this')
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT
+        "properties".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'seaerch & for & this:*')) AS rank0
+      FROM "properties"
+      INNER JOIN "runestones"
+        ON "runestones"."record_id" = "properties"."id"
+        AND "runestones"."record_type" = 'Property'
+      WHERE
+        "runestones"."vector" @@ to_tsquery('simple_unaccent', 'seaerch & for & this:*')
+      ORDER BY rank0 DESC
+    SQL
+  end
+  
+  test 'Model::search(query) with misspelling in query' do
+    Runestone::Corpus.add('search')
+    query = Property.search('seaerch for this')
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT
+        "properties".*,
+        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'seaerch & for & this:*')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '(seaerch | search) & for & this:*')) AS rank1
+      FROM "properties"
+      INNER JOIN "runestones" ON
+        "runestones"."record_id" = "properties"."id"
+        AND "runestones"."record_type" = 'Property'
+      WHERE
+        "runestones"."vector" @@ to_tsquery('simple_unaccent', '(seaerch | search) & for & this:*')
+      ORDER BY
+        rank0 DESC,
+        rank1 DESC
+    SQL
+  end
+  
+  test "::typos with special chars" do
+    Runestone::Corpus.add(*%w{avenue aveneue avenue)})
+    
+    words = "AVENUE AV AVE AVN AVEN AVENU AVNUE".split(/\s+/)
+    words.each do |word|
+      Runestone.add_synonym(word, *words.select { |w| w != word })
+    end
+
+    assert_sql(<<~SQL, Runestone::Model.search('avenue').to_sql)
+      SELECT
+        "runestones".*,
+        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'avenue:*')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '(avenue:* | aveneue)')) AS rank1,
+        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '((avenue:* | aveneue) | av | ave | avn | aven | avenu | avnue)')) AS rank2
+      FROM "runestones"
+      WHERE
+        "runestones"."vector" @@ to_tsquery('simple_unaccent', '((avenue:* | aveneue) | av | ave | avn | aven | avenu | avnue)')
+      ORDER BY
+        rank0 DESC,
+        rank1 DESC,
+        rank2 DESC
+    SQL
+  end
+
+end

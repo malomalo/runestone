@@ -4,6 +4,7 @@ class CreateRunestoneTables < ActiveRecord::Migration[6.0]
     enable_extension 'pgcrypto'
     enable_extension 'pg_trgm'
     enable_extension 'fuzzystrmatch'
+    enable_extension 'unaccent'
 
     create_table :runestones, id: :uuid do |t|
       t.belongs_to  :record, type: :uuid, polymorphic: true, null: false

@@ -18,6 +18,12 @@ Or include it in your project's `Gemfile` with Bundler:
 gem 'runestone'
 ```
 
+After installation, run the Runestone's migration to to enable the necessary database extensions and create the runestones and runestone corpus tables.
+
+```sh
+$ rails db:migrate
+```
+
 ## Usage
 
 ### Indexing

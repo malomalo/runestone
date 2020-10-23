@@ -6,7 +6,7 @@ module Runestone
   autoload :WebSearch, "#{File.dirname(__FILE__)}/runestone/web_search"
   autoload :IndexingJob, "#{File.dirname(__FILE__)}/runestone/indexing_job"
   
-  mattr_accessor :dictionary, default: :simple_unaccent
+  mattr_accessor :dictionary, default: :runestone
   mattr_accessor :runner, default: :inline
   mattr_accessor :job_queue, default: :runestone_indexing
   mattr_accessor :typo_tolerances, default: { 1 => 4..7, 2 => 8.. }
@@ -22,7 +22,13 @@ module Runestone
   rescue Encoding::CompatibilityError
     string
   end
-  
+
+  def self.normalize!(string)
+    string.downcase!
+    string.unicode_normalize!
+  rescue Encoding::CompatibilityError
+  end
+
   def self.add_synonyms(dictionary)
     dictionary.each do |k, v|
       add_synonym(k, *v)

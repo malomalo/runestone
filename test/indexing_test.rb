@@ -2,9 +2,9 @@ require 'test_helper'
 
 class IndexingTest < ActiveSupport::TestCase
   
-  test 'simple_unaccent index' do
+  test 'runestone index' do
     address = assert_difference 'Runestone::Model.count', 1 do
-      assert_sql(/setweight\(to_tsvector\('simple_unaccent', 'address name'\), 'A'\)/) do
+      assert_sql(/setweight\(to_tsvector\('runestone', 'address name'\), 'A'\)/) do
         Address.create(name: 'Address name')
       end
     end

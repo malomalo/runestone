@@ -13,11 +13,11 @@ class SynonymTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '17 & spruce:*')) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & spruce:*')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')) AS rank1
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end
@@ -40,11 +40,11 @@ class SynonymTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '17 & spruce:*')) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & spruce:*')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')) AS rank1
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end
@@ -59,11 +59,11 @@ class SynonymTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '17 & !spruce')) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & !spruce')) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & !spruce')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & !spruce')) AS rank1
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & !spruce')
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & !spruce')
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end
@@ -78,11 +78,11 @@ class SynonymTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '17 & spruce')) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & spruce')) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & spruce')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & spruce')) AS rank1
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & spruce')
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & spruce')
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end
@@ -98,11 +98,11 @@ class SynonymTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '17 & spruce:*')) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & spruce:*')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')) AS rank1
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('simple_unaccent', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end
@@ -116,11 +116,11 @@ class SynonymTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'one & hundred & spruce:*')) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', '((one & hundred | 100) & spruce:* | (one & hundred | one hundy) & spruce:*)')) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'one & hundred & spruce:*')) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '((one & hundred | 100) & spruce:* | (one & hundred | one hundy) & spruce:*)')) AS rank1
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('simple_unaccent', '((one & hundred | 100) & spruce:* | (one & hundred | one hundy) & spruce:*)')
+        "runestones"."vector" @@ to_tsquery('runestone', '((one & hundred | 100) & spruce:* | (one & hundred | one hundy) & spruce:*)')
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end

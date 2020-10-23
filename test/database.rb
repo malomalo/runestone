@@ -56,8 +56,8 @@ ActiveRecord::Migration.suppress_messages do
     CREATE INDEX runestone_corpus_trgm_idx ON runestone_corpus USING GIN (word gin_trgm_ops);
 
 
-      CREATE TEXT SEARCH CONFIGURATION simple_unaccent (COPY = simple);
-      ALTER TEXT SEARCH CONFIGURATION simple_unaccent
+      CREATE TEXT SEARCH CONFIGURATION runestone (COPY = simple);
+      ALTER TEXT SEARCH CONFIGURATION runestone
         ALTER MAPPING FOR hword, hword_part, word
         WITH unaccent, simple;
     SQL

@@ -33,9 +33,9 @@ class MultiIndexTest < ActiveSupport::TestCase
     
     query = Runestone::Model.search('empire')
     assert_sql(<<~SQL, query.to_sql)
-      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('simple_unaccent', 'empire:*')) AS rank0
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'empire:*')) AS rank0
       FROM "runestones"
-      WHERE "runestones"."vector" @@ to_tsquery('simple_unaccent', 'empire:*')
+      WHERE "runestones"."vector" @@ to_tsquery('runestone', 'empire:*')
       ORDER BY rank0 DESC
     SQL
     

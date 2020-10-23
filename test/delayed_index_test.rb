@@ -2,9 +2,9 @@ require 'test_helper'
 
 class DelayedIndexingTest < ActiveSupport::TestCase
   
-  test 'simple_unaccent index' do
+  test 'runestone index' do
     region = assert_no_difference 'Runestone::Model.count' do
-      assert_no_sql(/setweight\(to_tsvector\('simple_unaccent', 'address name'\), 'A'\)/) do
+      assert_no_sql(/setweight\(to_tsvector\('runestone', 'address name'\), 'A'\)/) do
         Region.create(name: 'Region name')
       end
     end

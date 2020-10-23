@@ -26,11 +26,7 @@ class Runestone::WebSearch
   # prefix options: :all, :last, :none (default: :last)
   def self.parse(query, prefix: :last)
     prefix ||= :last
-    begin
-      query.unicode_normalize!
-    rescue Encoding::CompatibilityError
-    end
-    query.downcase!
+    Runestone.normalize!(query)
 
     q = []
     stack = []

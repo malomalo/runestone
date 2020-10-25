@@ -27,6 +27,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'activejob', '>= 6.0'
 
   # Runtime
-  s.add_runtime_dependency 'arel-extensions', '>= 6.0'
+  s.add_runtime_dependency 'arel-extensions', '>= 6.0.0.9'
   s.add_runtime_dependency 'activerecord', '>= 6.0'
 end

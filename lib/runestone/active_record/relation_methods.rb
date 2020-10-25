@@ -39,14 +39,17 @@ module Runestone::ActiveRecord
       )
     end
 
-    def ts_rank_cd(vector, query, dictionary: nil)
+    def ts_rank_cd(vector, query, dictionary: nil, normalization: nil)
+      normalization ||= Runestone.normalization
+      
       Arel::Nodes::TSRankCD.new(
         ts_vector(vector, dictionary: dictionary),
-        ts_query(query, dictionary: dictionary)
+        ts_query(query, dictionary: dictionary),
+        normalization
       )
     end
 
-    def search(query, dictionary: nil, prefix: nil)
+    def search(query, dictionary: nil, prefix: nil, normalization: nil)
       exact_search = Runestone::WebSearch.parse(query, prefix: prefix)
       typo_search = exact_search.typos
       syn_search = typo_search.synonymize
@@ -58,11 +61,11 @@ module Runestone::ActiveRecord
       q = if select_values.empty?
         select(
           klass.arel_table[Arel.star],
-          *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
+          *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary, normalization: normalization), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
         )
       else
         select(
-          *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
+          *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary, normalization: normalization), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
         )
       end
 

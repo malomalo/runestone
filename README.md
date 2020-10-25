@@ -84,5 +84,27 @@ Runestone.add_synonym('one hundred', '100')
 Runestone.add_synonym('100', 'one hundred')
 ```
 
+### Defaults
+
+#### dictionary
+
+The default dictionary that Runestone uses is the `runestone` dictionary. Which
+is the `simple` dictionary in PostgreSQL with `unaccent` to tranliterate some
+characters to the ASCII equivlent.
+
+```ruby
+Runestone.dictionary = :runesonte
+```
+
+#### normalization for ranking
+
+Ranking can be configured to use the `normalization` paramater as described
+in the [PostgreSQL documentation][3]. The default is `16`
+
+```ruby
+Runestone.dictionary = 16
+```
+
 [1]: http://rachbelaid.com/postgres-full-text-search-is-good-enough/
 [2]: http://www.www-old.bartlettpublishing.com/site/bartpub/blog/3/entry/350
+[3]: https://www.postgresql.org/docs/13/textsearch-controls.html#TEXTSEARCH-RANKING

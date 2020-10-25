@@ -7,6 +7,7 @@ module Runestone
   autoload :IndexingJob, "#{File.dirname(__FILE__)}/runestone/indexing_job"
   
   mattr_accessor :dictionary, default: :runestone
+  mattr_accessor :normalization, default: 16
   mattr_accessor :runner, default: :inline
   mattr_accessor :job_queue, default: :runestone_indexing
   mattr_accessor :typo_tolerances, default: { 1 => 4..7, 2 => 8.. }
@@ -59,7 +60,7 @@ module Runestone
     syn[last].uniq!
   end
   
-  def search(query, dictionary: nil, prefix: :last)
+  def search(query, dictionary: nil, prefix: :last, normalization: nil)
     exact_search = Runestone::WebSearch.parse(query, prefix: prefix)
     typo_search = exact_search.typos
     syn_search = typo_search.synonymize
@@ -71,11 +72,11 @@ module Runestone
     q = if select_values.empty?
       select(
         klass.arel_table[Arel.star],
-        *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
+        *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary, normalization: normalization), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
       )
     else
       select(
-        *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
+        *tsqueries.each_with_index.map { |q, i| Arel::Nodes::As.new(ts_rank_cd(:vector, q, dictionary: dictionary, normalization: normalization), Arel::Nodes::SqlLiteral.new("rank#{i}")) }
       )
     end
 

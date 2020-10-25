@@ -33,7 +33,7 @@ class MultiIndexTest < ActiveSupport::TestCase
     
     query = Runestone::Model.search('empire')
     assert_sql(<<~SQL, query.to_sql)
-      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'empire:*')) AS rank0
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'empire:*'), 16) AS rank0
       FROM "runestones"
       WHERE "runestones"."vector" @@ to_tsquery('runestone', 'empire:*')
       ORDER BY rank0 DESC
@@ -42,7 +42,7 @@ class MultiIndexTest < ActiveSupport::TestCase
     query = Runestone::Model.search('empire', dictionary: 'english')
     assert_sql(<<~SQL, query.to_sql)
       SELECT
-        "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('english', 'empire:*')) AS rank0
+        "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('english', 'empire:*'), 16) AS rank0
       FROM "runestones"
       WHERE "runestones"."vector" @@ to_tsquery('english', 'empire:*')
       AND "runestones"."dictionary" = 'english'
@@ -51,7 +51,7 @@ class MultiIndexTest < ActiveSupport::TestCase
     
     query = Runestone::Model.search('Эмпайр', dictionary: 'russian')
     assert_sql(<<~SQL, query.to_sql)
-      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('russian', 'эмпайр:*')) AS rank0
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('russian', 'эмпайр:*'), 16) AS rank0
       FROM "runestones"
       WHERE "runestones"."vector" @@ to_tsquery('russian', 'эмпайр:*')
       AND "runestones"."dictionary" = 'russian'

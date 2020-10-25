@@ -38,5 +38,24 @@ class CorpusTest < ActiveSupport::TestCase
       Runestone::Corpus.similar_words('Allee')
     )
   end
-  
+
+  test 'adding words to corpus normalizes them' do
+    Runestone::Corpus.add("all\u00e9e")
+    assert_equal(
+      {
+        "Allee" => ["all\u00e9e"]
+      },
+      Runestone::Corpus.similar_words('Allee')
+    )
+
+    Runestone::Model.connection.execute('DELETE FROM runestone_corpus')
+    Runestone::Corpus.add("all\u0065\u0301e")
+    assert_equal(
+      {
+        "Allee" => ["all\u00e9e"]
+      },
+      Runestone::Corpus.similar_words('Allee')
+    )
+  end
+
 end

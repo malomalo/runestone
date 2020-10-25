@@ -57,7 +57,7 @@ module Runestone::ActiveRecord
       def highlights(name: :default, dictionary: nil)
         dictionary ||= Runestone.dictionary
 
-        rsettings = self.runestone_settings[name].find { |s| s.dictionary.to_s == dictionary.to_s}
+        rsettings = self.runestone_settings[name].find { |s| s.dictionary.to_s == dictionary.to_s }
         @highlights ||= highlight_indexes(rsettings.indexes.values.flatten.map{ |i| i.to_s.split('.') })
       end
 

@@ -14,6 +14,7 @@ class Runestone::Engine < Rails::Engine
 
     Runestone.runner = options.runner if options.runner
     Runestone.dictionary = options.dictionary if options.dictionary
+    Runestone.normalization = options.normalization if options.normalization
     Runestone.job_queue = options.job_queue if options.job_queue
     Runestone.typo_tolerances = options.typo_tolerances if options.typo_tolerances
   end

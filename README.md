@@ -93,6 +93,16 @@ is the `simple` dictionary in PostgreSQL with `unaccent` to tranliterate some
 characters to the ASCII equivlent.
 
 ```ruby
+module RailsApplicationName
+  class Application < Rails::Application
+    config.runestone.dictionary = :runesonte
+  end
+end
+```
+
+If you are not using Rails, you can use the following:
+
+```ruby
 Runestone.dictionary = :runesonte
 ```
 
@@ -102,7 +112,17 @@ Ranking can be configured to use the `normalization` paramater as described
 in the [PostgreSQL documentation][3]. The default is `16`
 
 ```ruby
-Runestone.dictionary = 16
+module RailsApplicationName
+  class Application < Rails::Application
+    config.runestone.normalization = 1|16
+  end
+end
+```
+
+If you are not using Rails, you can use the following:
+
+```ruby
+Runestone.normalization = 16
 ```
 
 [1]: http://rachbelaid.com/postgres-full-text-search-is-good-enough/

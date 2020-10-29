@@ -95,7 +95,7 @@ characters to the ASCII equivlent.
 ```ruby
 module RailsApplicationName
   class Application < Rails::Application
-    config.runestone.dictionary = :runesonte
+    config.runestone.dictionary = :runestone
   end
 end
 ```
@@ -103,7 +103,7 @@ end
 If you are not using Rails, you can use the following:
 
 ```ruby
-Runestone.dictionary = :runesonte
+Runestone.dictionary = :runestone
 ```
 
 #### normalization for ranking

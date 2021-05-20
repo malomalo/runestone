@@ -1,11 +1,9 @@
 class Runestone::Engine < Rails::Engine
   config.runestone = ActiveSupport::OrderedOptions.new
 
-  initializer :append_migrations do |app|
-    unless app.root.to_s.match root.to_s
-      config.paths["db/migrate"].expanded.each do |expanded_path|
-        app.config.paths["db/migrate"] << expanded_path
-      end
+  initializer :runestone do |app|
+    ActiveSupport.on_load(:active_record) do
+      ActiveRecord::Tasks::DatabaseTasks.migrations_paths << File.expand_path('../../../db/migrate', __FILE__)
     end
   end
   

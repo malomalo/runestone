@@ -5,6 +5,7 @@ module Runestone
   autoload :Settings, "#{File.dirname(__FILE__)}/runestone/settings"
   autoload :WebSearch, "#{File.dirname(__FILE__)}/runestone/web_search"
   autoload :IndexingJob, "#{File.dirname(__FILE__)}/runestone/indexing_job"
+  autoload :PsqlSchemaDumper, "#{File.dirname(__FILE__)}/runestone/psql_schema_dumper"
   
   mattr_accessor :dictionary, default: :runestone
   mattr_accessor :normalization, default: 16

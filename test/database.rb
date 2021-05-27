@@ -51,10 +51,9 @@ ActiveRecord::Migration.suppress_messages do
     add_index :runestones, :vector, using: :gin
     
     execute <<-SQL
-    CREATE TABLE runestone_corpus ( word varchar, CONSTRAINT word UNIQUE(word) );
+      CREATE TABLE runestone_corpus ( word varchar, CONSTRAINT word UNIQUE(word) );
 
-    CREATE INDEX runestone_corpus_trgm_idx ON runestone_corpus USING GIN (word gin_trgm_ops);
-
+      CREATE INDEX runestone_corpus_trgm_idx ON runestone_corpus USING GIN (word gin_trgm_ops);
 
       CREATE TEXT SEARCH CONFIGURATION runestone (COPY = simple);
       ALTER TEXT SEARCH CONFIGURATION runestone

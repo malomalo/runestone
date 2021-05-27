@@ -3,6 +3,8 @@ class Runestone::Engine < Rails::Engine
 
   initializer :runestone do |app|
     ActiveSupport.on_load(:active_record) do
+      require 'active_record/connection_adapters/postgresql/schema_dumper'
+      ActiveRecord::ConnectionAdapters::PostgreSQL::SchemaDumper.prepend(Runestone::PsqlSchemaDumper)
       ActiveRecord::Tasks::DatabaseTasks.migrations_paths << File.expand_path('../../../db/migrate', __FILE__)
     end
   end
@@ -16,5 +18,4 @@ class Runestone::Engine < Rails::Engine
     Runestone.job_queue = options.job_queue if options.job_queue
     Runestone.typo_tolerances = options.typo_tolerances if options.typo_tolerances
   end
-  
 end

@@ -2,3 +2,7 @@ coverage
 .byebug_history
 *.gem
 Gemfile.lock
+.DS_Store
+pgext/results
+*.o
+*.so

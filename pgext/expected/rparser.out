@@ -1,0 +1,372 @@
+CREATE EXTENSION rparser;
+SELECT * FROM ts_token_type('rparser');
+ tokid |      alias      |               description                
+-------+-----------------+------------------------------------------
+     1 | asciiword       | Word, all ASCII
+     2 | word            | Word, all letters
+     3 | numword         | Word, letters and digits
+     4 | email           | Email address
+     5 | url             | URL
+     6 | host            | Host
+     7 | sfloat          | Scientific notation
+     8 | version         | Version number
+     9 | hword_numpart   | Hyphenated word part, letters and digits
+    10 | hword_part      | Hyphenated word part, all letters
+    11 | hword_asciipart | Hyphenated word part, all ASCII
+    12 | blank           | Space symbols
+    13 | tag             | XML tag
+    14 | protocol        | Protocol head
+    15 | numhword        | Hyphenated word, letters and digits
+    16 | asciihword      | Hyphenated word, all ASCII
+    17 | hword           | Hyphenated word, all letters
+    18 | url_path        | URL path
+    19 | file            | File or path name
+    20 | float           | Decimal notation
+    21 | int             | Signed integer
+    22 | uint            | Unsigned integer
+    23 | entity          | XML entity
+    24 | symbol          | Symbol
+(24 rows)
+
+SELECT DISTINCT a.token, j.alias
+FROM ts_parse('rparser', 'v & J ~ ` ! @ # $ % ^ & * ( ) - _ = + ? / > . < , : ; '' " [ { ] } \ | V & J') AS a
+INNER JOIN ts_token_type('rparser') AS j ON j.tokid = a.tokid;
+ token |   alias   
+-------+-----------
+ ]     | symbol
+       | blank
+ (     | symbol
+ !     | symbol
+ .     | symbol
+ %     | symbol
+ >     | symbol
+ +     | symbol
+ "     | symbol
+ ;     | symbol
+ @     | symbol
+ <     | symbol
+ &     | symbol
+ ?     | symbol
+ /     | symbol
+ \     | symbol
+ '     | symbol
+ |     | symbol
+ $     | symbol
+ ,     | symbol
+ -     | symbol
+ v     | asciiword
+ {     | symbol
+ J     | asciiword
+ `     | symbol
+ _     | symbol
+ ^     | symbol
+ V     | asciiword
+ [     | symbol
+ =     | symbol
+ }     | symbol
+ )     | symbol
+ *     | symbol
+ #     | symbol
+ :     | symbol
+ ~     | symbol
+(36 rows)
+
+SELECT a.token, j.alias
+FROM ts_parse('rparser', 'V&J a!n') AS a
+INNER JOIN ts_token_type('rparser') AS j ON j.tokid = a.tokid;
+ token | alias 
+-------+-------
+ V&J   | word
+       | blank
+ a!n   | word
+(3 rows)
+
+SELECT * FROM ts_parse('rparser', 'V&J.992600');
+ tokid |   token    
+-------+------------
+     3 | V&J.992600
+(1 row)
+
+SELECT * FROM ts_parse('rparser', 'V_J&25.34');
+ tokid |   token   
+-------+-----------
+    19 | V_J&25.34
+(1 row)
+
+SELECT * FROM ts_parse('rparser', 'V&J.H25');
+ tokid |  token  
+-------+---------
+     3 | V&J.H25
+(1 row)
+
+SELECT j.alias AS type, a.token AS token
+FROM ts_parse('rparser', '345 12_abc qwe@efd.r '' http://www.com/ http://aew.werc.ewr/?ad=qwe&dw 1aew.werc.ewr/?ad=qwe&dw 2aew.werc.ewr http://3aew.werc.ewr/?ad=qwe&dw http://4aew.werc.ewr http://5aew.werc.ewr:8100/?  ad=qwe&dw 6aew.werc.ewr:8100/?ad=qwe&dw 7aew.werc.ewr:8100/?ad=qwe&dw=%20%32 +4.0e-10 qwe qwe qwqwe 234.435 455 5.005 teodor@stack.net teodor@123-stack.net 123_teodor@stack.net 123-teodor@stack.net qwe-wer asdf <fr>qwer jf sdjk<we hjwer <werrwe> ewr1> ewri2 <a href="qwe<qwe>">
+/usr/local/fff /awdf/dwqe/4325 rewt/ewr wefjn /wqe-324/ewr gist.h gist.h.c gist.c. readline 4.2 4.2. 4.2, readline-4.2 readline-4.2. 234
+<i <b> wow  < jqw <> qwerty') AS a
+INNER JOIN ts_token_type('rparser') AS j ON j.tokid = a.tokid;
+   type    |                token                 
+-----------+--------------------------------------
+ uint      | 345
+ blank     |  
+ word      | 12_abc
+ blank     |  
+ word      | qwe@efd.r
+ blank     |  
+ symbol    | '
+ blank     |  
+ protocol  | http://
+ host      | www.com
+ symbol    | /
+ blank     |  
+ protocol  | http://
+ url       | aew.werc.ewr/?ad=qwe&dw
+ host      | aew.werc.ewr
+ url_path  | /?ad=qwe&dw
+ blank     |  
+ url       | 1aew.werc.ewr/?ad=qwe&dw
+ host      | 1aew.werc.ewr
+ url_path  | /?ad=qwe&dw
+ blank     |  
+ host      | 2aew.werc.ewr
+ blank     |  
+ protocol  | http://
+ url       | 3aew.werc.ewr/?ad=qwe&dw
+ host      | 3aew.werc.ewr
+ url_path  | /?ad=qwe&dw
+ blank     |  
+ protocol  | http://
+ host      | 4aew.werc.ewr
+ blank     |  
+ protocol  | http://
+ url       | 5aew.werc.ewr:8100/?
+ host      | 5aew.werc.ewr:8100
+ url_path  | /?
+ blank     |   
+ word      | ad=qwe&dw
+ blank     |  
+ url       | 6aew.werc.ewr:8100/?ad=qwe&dw
+ host      | 6aew.werc.ewr:8100
+ url_path  | /?ad=qwe&dw
+ blank     |  
+ url       | 7aew.werc.ewr:8100/?ad=qwe&dw=%20%32
+ host      | 7aew.werc.ewr:8100
+ url_path  | /?ad=qwe&dw=%20%32
+ blank     |  
+ sfloat    | +4.0e-10
+ blank     |  
+ asciiword | qwe
+ blank     |  
+ asciiword | qwe
+ blank     |  
+ asciiword | qwqwe
+ blank     |  
+ float     | 234.435
+ blank     |  
+ uint      | 455
+ blank     |  
+ float     | 5.005
+ blank     |  
+ email     | teodor@stack.net
+ blank     |  
+ email     | teodor@123-stack.net
+ blank     |  
+ email     | 123_teodor@stack.net
+ blank     |  
+ email     | 123-teodor@stack.net
+ blank     |  
+ word      | qwe-wer
+ blank     |  
+ asciiword | asdf
+ blank     |  
+ tag       | <fr>
+ asciiword | qwer
+ blank     |  
+ asciiword | jf
+ blank     |  
+ word      | sdjk<we
+ blank     |  
+ asciiword | hjwer
+ blank     |  
+ tag       | <werrwe>
+ blank     |  
+ word      | ewr1>
+ blank     |  
+ numword   | ewri2
+ blank     |  
+ tag       | <a href="qwe<qwe>">
+ blank     |                                     +
+           | 
+ file      | /usr/local/fff
+ blank     |  
+ file      | /awdf/dwqe/4325
+ blank     |  
+ file      | rewt/ewr
+ blank     |  
+ asciiword | wefjn
+ blank     |  
+ file      | /wqe-324/ewr
+ blank     |  
+ file      | gist.h
+ blank     |  
+ file      | gist.h.c
+ blank     |  
+ file      | gist.c.
+ blank     |  
+ asciiword | readline
+ blank     |  
+ float     | 4.2
+ blank     |  
+ float     | 4.2
+ symbol    | .
+ blank     |  
+ float     | 4.2
+ symbol    | ,
+ blank     |  
+ file      | readline-4.2
+ blank     |  
+ file      | readline-4.2.
+ blank     |  
+ uint      | 234
+ blank     |                                     +
+           | 
+ word      | <i
+ blank     |  
+ tag       | <b>
+ blank     |  
+ asciiword | wow
+ blank     |   
+ symbol    | <
+ blank     |  
+ asciiword | jqw
+ blank     |  
+ symbol    | <>
+ blank     |  
+ asciiword | qwerty
+(134 rows)
+
+-- Test text search configuration with parser
+CREATE TEXT SEARCH CONFIGURATION runestone (
+    PARSER = rparser
+);
+ALTER TEXT SEARCH CONFIGURATION runestone
+ALTER MAPPING FOR
+	asciiword, word, numword, asciihword, hword, numhword, hword_asciipart,
+	hword_part, hword_numpart, email, protocol, url, host, url_path, file, sfloat,
+	float, int, uint, version, tag, entity, blank, symbol
+WITH simple;
+SELECT to_tsvector('runestone', 'pg_trgm');
+ to_tsvector 
+-------------
+ 'pg_trgm':1
+(1 row)
+
+SELECT to_tsvector('runestone', '12_abc');
+ to_tsvector 
+-------------
+ '12_abc':1
+(1 row)
+
+SELECT to_tsvector('runestone', '12-abc');
+ to_tsvector 
+-------------
+ '12-abc':1
+(1 row)
+
+SELECT to_tsvector('runestone', 'test.com');
+ to_tsvector  
+--------------
+ 'test.com':1
+(1 row)
+
+SELECT to_tsvector('runestone', 'test2.com');
+  to_tsvector  
+---------------
+ 'test2.com':1
+(1 row)
+
+SELECT * FROM to_tsquery('runestone', '(shepherd | sheppard) & (and | ''&'') & wedderburn:*');
+                           to_tsquery                           
+----------------------------------------------------------------
+ ( 'shepherd' | 'sheppard' ) & ( 'and' | '&' ) & 'wedderburn':*
+(1 row)
+
+-- Test non-ASCII symbols
+-- must have a UTF8 database
+SELECT getdatabaseencoding();
+ getdatabaseencoding 
+---------------------
+ UTF8
+(1 row)
+
+SET client_encoding TO 'UTF8';
+SELECT a.token, j.alias
+FROM ts_parse('rparser', 'аб_вгд 12_абв 12-абв абв.рф абв2.рф') AS a
+INNER JOIN ts_token_type('rparser') AS j ON j.tokid = a.tokid;
+  token  | alias 
+---------+-------
+ аб_вгд  | word
+         | blank
+ 12_абв  | word
+         | blank
+ 12-абв  | word
+         | blank
+ абв.рф  | word
+         | blank
+ абв2.рф | word
+(9 rows)
+
+-- ts_debug
+SELECT * from ts_debug('runestone', '<myns:foo-bar_baz.blurfl>abc&nm1;def&#xa9;ghi&#245;jkl</myns:foo-bar_baz.blurfl>');
+ alias |         description          |                    token                    | dictionaries | dictionary |                    lexemes                    
+-------+------------------------------+---------------------------------------------+--------------+------------+-----------------------------------------------
+ tag   | XML tag                      | <myns:foo-bar_baz.blurfl>                   | {simple}     | simple     | {<myns:foo-bar_baz.blurfl>}
+ hword | Hyphenated word, all letters | abc&nm1;def&#xa9;ghi&#245;jkl</myns:foo-bar | {simple}     | simple     | {abc&nm1;def&#xa9;ghi&#245;jkl</myns:foo-bar}
+ blank | Space symbols                | -bar_baz.blurfl>                            | {simple}     | simple     | {-bar_baz.blurfl>}
+(3 rows)
+
+-- check parsing of URLs
+SELECT * from ts_debug('runestone', 'http://www.harewoodsolutions.co.uk/press.aspx</span>');
+  alias   |  description  |                 token                  | dictionaries | dictionary |                 lexemes                  
+----------+---------------+----------------------------------------+--------------+------------+------------------------------------------
+ protocol | Protocol head | http://                                | {simple}     | simple     | {http://}
+ url      | URL           | www.harewoodsolutions.co.uk/press.aspx | {simple}     | simple     | {www.harewoodsolutions.co.uk/press.aspx}
+ host     | Host          | www.harewoodsolutions.co.uk            | {simple}     | simple     | {www.harewoodsolutions.co.uk}
+ url_path | URL path      | /press.aspx                            | {simple}     | simple     | {/press.aspx}
+ tag      | XML tag       | </span>                                | {simple}     | simple     | {</span>}
+(5 rows)
+
+SELECT * from ts_debug('runestone', 'http://aew.wer0c.ewr/id?ad=qwe&dw<span>');
+  alias   |  description  |           token            | dictionaries | dictionary |           lexemes            
+----------+---------------+----------------------------+--------------+------------+------------------------------
+ protocol | Protocol head | http://                    | {simple}     | simple     | {http://}
+ url      | URL           | aew.wer0c.ewr/id?ad=qwe&dw | {simple}     | simple     | {aew.wer0c.ewr/id?ad=qwe&dw}
+ host     | Host          | aew.wer0c.ewr              | {simple}     | simple     | {aew.wer0c.ewr}
+ url_path | URL path      | /id?ad=qwe&dw              | {simple}     | simple     | {/id?ad=qwe&dw}
+ tag      | XML tag       | <span>                     | {simple}     | simple     | {<span>}
+(5 rows)
+
+SELECT * from ts_debug('runestone', 'http://5aew.werc.ewr:8100/?');
+  alias   |  description  |        token         | dictionaries | dictionary |        lexemes         
+----------+---------------+----------------------+--------------+------------+------------------------
+ protocol | Protocol head | http://              | {simple}     | simple     | {http://}
+ url      | URL           | 5aew.werc.ewr:8100/? | {simple}     | simple     | {5aew.werc.ewr:8100/?}
+ host     | Host          | 5aew.werc.ewr:8100   | {simple}     | simple     | {5aew.werc.ewr:8100}
+ url_path | URL path      | /?                   | {simple}     | simple     | {/?}
+(4 rows)
+
+SELECT * from ts_debug('runestone', '5aew.werc.ewr:8100/?xx');
+  alias   | description |         token          | dictionaries | dictionary |         lexemes          
+----------+-------------+------------------------+--------------+------------+--------------------------
+ url      | URL         | 5aew.werc.ewr:8100/?xx | {simple}     | simple     | {5aew.werc.ewr:8100/?xx}
+ host     | Host        | 5aew.werc.ewr:8100     | {simple}     | simple     | {5aew.werc.ewr:8100}
+ url_path | URL path    | /?xx                   | {simple}     | simple     | {/?xx}
+(3 rows)
+
+SELECT j.alias AS type, a.token AS token
+FROM ts_parse('rparser', '12_abc') AS a
+INNER JOIN ts_token_type('rparser') AS j ON j.tokid = a.tokid;
+ type | token  
+------+--------
+ word | 12_abc
+(1 row)
+

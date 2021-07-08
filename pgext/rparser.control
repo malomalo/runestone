@@ -1,0 +1,6 @@
+# rparser extension
+comment = 'Text search parser for Runestone'
+default_version = '1.0'
+#module_pathname = '$libdir/rparser'
+module_pathname = '/Users/malomalo/Code/runestone/pgext/rparser'
+relocatable = true

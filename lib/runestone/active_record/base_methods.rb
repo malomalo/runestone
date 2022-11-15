@@ -40,7 +40,7 @@ module Runestone::ActiveRecord
         conn = Runestone::Model.connection
         model_table = conn.quote_table_name(table_name)
         
-        conn.execute(<<-SQL.gsub("\n", ' ').gsub("\n", ' ').gsub(/\s+/, " ").strip)
+        conn.execute(<<-SQL.gsub("\n", ' ').gsub(/\s+/, " ").strip)
           DELETE FROM runestones
           USING runestones AS t2
           LEFT OUTER JOIN #{model_table} ON
@@ -92,7 +92,7 @@ module Runestone::ActiveRecord
             conn.quote(conn.send(:type_map).lookup('jsonb').serialize(rdata)),
             setting.vectorize(rdata).join(' || ')
           ]
-          conn.execute(<<-SQL.gsub("\n", ' ').gsub("\n", ' ').gsub(/\s+/, " ").strip)
+          conn.execute(<<-SQL.gsub("\n", ' ').gsub(/\s+/, " ").strip)
             INSERT INTO #{Runestone::Model.quoted_table_name} (#{ts_column_names.join(",")})
             VALUES (#{ts_values.join(',')})
           SQL
@@ -112,7 +112,7 @@ module Runestone::ActiveRecord
         settings.each do |setting|
           rdata = setting.extract_attributes(self)
 
-          if conn.execute(<<-SQL.gsub("\n", ' ').gsub("\n", ' ').gsub(/\s+/, " ").strip).cmd_tuples == 0
+          if conn.execute(<<-SQL.gsub("\n", ' ').gsub(/\s+/, " ").strip).cmd_tuples == 0
               UPDATE #{Runestone::Model.quoted_table_name}
               SET
                 data = #{conn.quote(conn.send(:type_map).lookup('jsonb').serialize(rdata))},

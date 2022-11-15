@@ -2,6 +2,7 @@ GlobalID.app = 'TestApp'
 
 task = ActiveRecord::Tasks::PostgreSQLDatabaseTasks.new({
   'adapter' => 'postgresql',
+  'password' => 'postgres',
   'database' => "arel-extensions-test"
 })
 task.drop

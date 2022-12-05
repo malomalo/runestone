@@ -23,6 +23,27 @@ class IndexingTest < ActiveSupport::TestCase
     })
   end
 
+  test 'runestone index a word with symbols' do
+    address = assert_difference 'Runestone::Model.count', 1 do
+      assert_sql(/setweight\(to_tsvector\('runestone', 'j&b'\), 'A'\)/) do
+        Address.create(name: 'J&B')
+      end
+    end
+
+    assert_equal([[
+      'Address', address.id,
+      {"name" => "J&B"},
+      "'j&b':1A"
+    ]], address.runestones.map { |runestone|
+      [
+        runestone.record_type,
+        runestone.record_id,
+        runestone.data,
+        runestone.vector
+      ]
+    })
+  end
+  
   test 'empty index' do
     address = assert_difference 'Runestone::Model.count', 1 do
       Address.create(name: nil)
@@ -73,7 +94,7 @@ class IndexingTest < ActiveSupport::TestCase
   test 'index Unicode strings get normalized' do
     address = Address.create(name: "on\u0065\u0301")
 
-    assert_equal(["'on\u00e9':1A"], address.reload.runestones.map(&:vector))
+    assert_equal(["'one':1A"], address.reload.runestones.map(&:vector))
   end
 
   test 'index gets created on Model.create' do

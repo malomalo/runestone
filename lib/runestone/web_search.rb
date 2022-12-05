@@ -4,6 +4,12 @@ class Runestone::WebSearch
   autoload :Token, "#{File.dirname(__FILE__)}/web_search/token"
   autoload :Phrase, "#{File.dirname(__FILE__)}/web_search/phrase"
   
+  def self.quote(token)
+    return token unless token.index(/\(|\)|:|\||!|\&|\*|<->/)
+    
+    "'#{token.gsub("'", "''")}'"
+  end
+  
   class Match
     attr_accessor :index, :substitution
     def initialize(index, substitution)
@@ -33,7 +39,6 @@ class Runestone::WebSearch
     knot = false
     tokens = query.gsub(/\"\s+\"/, '""').split(' ')
     tokens.each_with_index do |token, i|
-      token.gsub!(/\(|\)|:|\||!|\&|\*/, '')
       if token.start_with?('-')
         knot = true
         token.delete_prefix!('-')
@@ -43,6 +48,7 @@ class Runestone::WebSearch
   
       next if token.empty? || token == '""' || %w(' ").include?(token)
     
+      token = quote(token)
       if token.start_with?('"') && token.end_with?('"')
         token.delete_prefix!('"')
         token.delete_suffix!('"')

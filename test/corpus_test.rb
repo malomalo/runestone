@@ -57,5 +57,24 @@ class CorpusTest < ActiveSupport::TestCase
       Runestone::Corpus.similar_words('Allee')
     )
   end
+  
+  # test 'a word with symbols' do
+  #   Runestone::Corpus.add("A&J")
+  #   assert_equal(
+  #     {
+  #       "Allee" => ["all\u00e9e"]
+  #     },
+  #     Runestone::Corpus.similar_words('A!J')
+  #   )
+  #
+  #   Runestone::Model.connection.execute('DELETE FROM runestone_corpus')
+  #   Runestone::Corpus.add("all\u0065\u0301e")
+  #   assert_equal(
+  #     {
+  #       "Allee" => ["all\u00e9e"]
+  #     },
+  #     Runestone::Corpus.similar_words('Allee')
+  #   )
+  # end
 
 end

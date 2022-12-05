@@ -48,7 +48,7 @@ class Runestone::Settings
         
         dig(data, path).each do |value|
           next if !value
-          language = value.to_s.size <= 5 ? 'simple' : @dictionary
+          language = value.to_s.size <= 5 ? 'runestone' : @dictionary
           tsvector << "setweight(to_tsvector(#{conn.quote(language)}, #{conn.quote(value.to_s.downcase)}), #{conn.quote(tsweight)})"
         end
       end

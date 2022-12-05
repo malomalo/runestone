@@ -22,10 +22,14 @@ class CreateRunestoneTables < ActiveRecord::Migration[6.0]
 
       CREATE INDEX runestone_corpus_trgm_idx ON runestone_corpus USING GIN (word gin_trgm_ops);
 
-      CREATE TEXT SEARCH CONFIGURATION runestone (COPY = simple);
+      CREATE EXTENSION IF NOT EXISTS rparser;
+      CREATE TEXT SEARCH CONFIGURATION runestone (PARSER = rparser);
       ALTER TEXT SEARCH CONFIGURATION runestone
-        ALTER MAPPING FOR hword, hword_part, word
-        WITH unaccent, simple;
+      ALTER MAPPING FOR
+        asciiword, word, numword, asciihword, hword, numhword, hword_asciipart,
+        hword_part, hword_numpart, email, protocol, url, host, url_path, file, sfloat,
+        float, int, uint, version, tag, entity, symbol
+      WITH unaccent, simple;
     SQL
   end
 

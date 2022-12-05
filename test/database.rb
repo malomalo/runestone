@@ -1,5 +1,16 @@
 GlobalID.app = 'TestApp'
 
+module H
+  def extensions(stream)
+    stream
+  end
+end
+
+class SchemaHelper
+  include H
+  include Runestone::PsqlSchemaDumper
+end
+
 task = ActiveRecord::Tasks::PostgreSQLDatabaseTasks.new({
   'adapter' => 'postgresql',
   'database' => "arel-extensions-test"
@@ -49,17 +60,14 @@ ActiveRecord::Migration.suppress_messages do
 
     add_index :runestones, [:record_type, :record_id, :name, :dictionary], unique: true, name: 'index_runestones_for_uniqueness'
     add_index :runestones, :vector, using: :gin
-    
+
     execute <<-SQL
       CREATE TABLE runestone_corpus ( word varchar, CONSTRAINT word UNIQUE(word) );
 
       CREATE INDEX runestone_corpus_trgm_idx ON runestone_corpus USING GIN (word gin_trgm_ops);
-
-      CREATE TEXT SEARCH CONFIGURATION runestone (COPY = simple);
-      ALTER TEXT SEARCH CONFIGURATION runestone
-        ALTER MAPPING FOR hword, hword_part, word
-        WITH unaccent, simple;
     SQL
+    
+    execute(SchemaHelper.new.extensions(StringIO.new).string.gsub(/\A.*\n.*\n/, '').gsub(/.*\Z/, ''))
   end
 end
 

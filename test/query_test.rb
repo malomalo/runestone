@@ -81,6 +81,22 @@ class QueryTest < ActiveSupport::TestCase
     SQL
   end
   
+  test 'Model::search(query) with symbols' do
+    query = Property.search('seaerch for this & that')
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT
+        "properties".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'seaerch & for & this & ''&'' & that:*'), 16) AS rank0
+      FROM "properties"
+      INNER JOIN "runestones"
+        ON "runestones"."record_type" = 'Property'
+        AND "runestones"."record_id" = "properties"."id"
+      WHERE
+        "runestones"."vector" @@ to_tsquery('runestone', 'seaerch & for & this & ''&'' & that:*')
+      ORDER BY rank0 DESC
+    SQL
+  end
+  
   test 'Model::search(query) with misspelling in query' do
     Runestone::Corpus.add('search')
     query = Property.search('seaerch for this')

@@ -1,18 +1,15 @@
 GlobalID.app = 'TestApp'
 
-task = ActiveRecord::Tasks::PostgreSQLDatabaseTasks.new({
-  'adapter' => 'postgresql',
-  'password' => 'postgres',
-  'database' => "arel-extensions-test"
-})
-task.drop
-task.create
-
 ActiveRecord::Base.establish_connection({
   adapter:  "postgresql",
   database: "arel-extensions-test",
   encoding: "utf8"
 })
+
+db_config = ActiveRecord::Base.connection_db_config
+task = ActiveRecord::Tasks::PostgreSQLDatabaseTasks.new(db_config)
+task.drop
+task.create
 
 ActiveRecord::Migration.suppress_messages do
   ActiveRecord::Schema.define do

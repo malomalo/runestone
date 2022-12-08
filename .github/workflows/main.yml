@@ -1,30 +1,46 @@
 name: Test Suite
 on: [push, pull_request]
+
 jobs:
   test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: arel-extensions-test
-        ports:
-          - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        rails:
+          - v6.1.7
+          - v7.0.4
+
     steps:
-      - name: Check Out Code
-        uses: actions/checkout@v2
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Install Postgresql
+        run: |
+          sudo pg_dropcluster 13 main && echo 'okay'
+          sudo pg_dropcluster 14 main && echo 'okay'
+          sudo rm -rf /etc/postgresql-common
+          sudo apt-get -y --purge remove $(sudo apt list --installed | grep postgresql | awk '{print $1}')
+          sudo apt-get install curl ca-certificates gnupg
+          curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo apt-get update
+          sudo apt-get -y install postgresql-15
+          sudo systemctl start postgresql@15-main.service
+          sudo systemctl status postgresql@15-main.service
+          sudo pg_lsclusters
+          sudo -u postgres createuser runner --superuser
+
+      - uses: actions/checkout@v3
+
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.1.2
+          ruby-version: 3.1
+
+      - run: |
+          cat 'gem "activerecord", "${{ matrix.rails }}"'
+
       - name: Install Ruby Dependencies
         run: |
           gem install bundler
           bundle config path vendor/bundle
           bundle install --jobs 4 --retry 3
+
       - name: Run Test Suite
         run: bundle exec rake test

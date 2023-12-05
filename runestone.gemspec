@@ -24,9 +24,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'byebug'
   s.add_development_dependency 'faker'
   s.add_development_dependency 'simplecov'
-  s.add_development_dependency 'activejob', '>= 6.0'
+  s.add_development_dependency 'activejob', '>= 7.0'
 
   # Runtime
-  s.add_runtime_dependency 'arel-extensions', '>= 6.0.0.9'
-  s.add_runtime_dependency 'activerecord', '>= 6.0'
+  s.add_runtime_dependency 'arel-extensions', '>= 7.0.0'
+  s.add_runtime_dependency 'activerecord', '>= 7.0'
 end

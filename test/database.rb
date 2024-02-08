@@ -20,20 +20,28 @@ ActiveRecord::Migration.suppress_messages do
 
     create_table :addresses, id: :uuid, force: :cascade do |t|
       t.string  "name"
+      t.string  "metadata"
       t.uuid    "property_id"
     end
     
     create_table :properties, id: :uuid, force: :cascade do |t|
-      t.string   "name",                 limit: 255
+      t.string  "name",                 limit: 255
+      t.string  "metadata"
     end
 
     create_table :regions, id: :uuid, force: :cascade do |t|
       t.string   "name",                 limit: 255
+      t.boolean   "pooblic",              default: true
     end
 
     create_table :buildings, id: :uuid, force: :cascade do |t|
       t.string   "name_en",              limit: 255
       t.string   "name_ru",              limit: 255
+    end
+    
+    create_table :people, id: :uuid, force: :cascade do |t|
+      t.string   "name",                 limit: 255
+      t.boolean   "pooblic",              default: true
     end
 
     create_table :runestones, id: :uuid, force: :cascade do |t|
@@ -87,7 +95,7 @@ end
 
 class Property < ActiveRecord::Base
   
-  has_many :addresses
+  has_many :addresses, autosave: true
 
   runestone do
     index :name
@@ -104,13 +112,25 @@ class Building < ActiveRecord::Base
   runestone dictionary: 'english' do
     index :name
 
-    attribute(:name) { name_en }
+    attribute(:name, :name_en) { name_en }
   end
   
   runestone dictionary: 'russian' do
     index :name
 
     attribute(:name) { name_ru }
+  end
+
+end
+
+class Person < ActiveRecord::Base
+
+  runestone do
+    index 'name'
+    
+    attribute :name, -> () { pooblic } do
+      name
+    end
   end
 
 end

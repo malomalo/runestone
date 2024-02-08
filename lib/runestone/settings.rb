@@ -14,11 +14,16 @@ class Runestone::Settings
   end
 
   def attribute(*names, &block)
-    raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
+    deps = if block_given? and names.length > 2
+      raise ArgumentError.new('Cannot pass multiple attribute names if block given')
+    else
+      names.length > 1 ? names.pop : names.first
+    end
+    deps = deps.to_s if !deps.is_a?(Proc)
 
     @attributes ||= {}
     names.each do |name|
-      @attributes[name.to_sym] = block ? block : nil
+      @attributes[name.to_sym] = [block ? block : nil, deps]
     end
   end
   alias :attributes :attribute
@@ -27,8 +32,8 @@ class Runestone::Settings
     attributes = {}
 
     @attributes.each do |name, value|
-      attributes[name] = if value.is_a?(Proc)
-        record.instance_exec(&value)
+      attributes[name] = if value[0].is_a?(Proc)
+        record.instance_exec(&value[0])
       else
         rv = record.send(name)
       end
@@ -37,6 +42,18 @@ class Runestone::Settings
     remove_nulls(attributes)
   end
 
+  def changed?(record)
+    @attributes.detect do |name, value|
+      if value[1].is_a?(Proc)
+        record.instance_exec(&value[1])
+      elsif record.attribute_names.include?(value[1])
+        record.previous_changes.has_key?(value[1])
+      elsif record._reflections[value[1]] && association = record.association(value[1])
+        association.loaded? && association.changed_for_autosave?
+      end
+    end
+  end
+  
   def vectorize(data)
     conn = Runestone::Model.connection
     tsvector = []

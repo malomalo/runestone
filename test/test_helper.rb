@@ -63,50 +63,70 @@ class ActiveSupport::TestCase
     ActiveRecord::Base.logger = nil
     $debugging = false
   end
+  
+  def assert_sql(*expected)
+    return_value = nil
+    
+    queries_ran = if block_given?
+      queries_ran = SQLLogger.log.size
+      return_value = yield if block_given?
+      SQLLogger.log[queries_ran...]
+    else
+      [expected.pop]
+    end
 
-  def capture_sql
-    # ActiveRecord::Base.connection.materialize_transactions
-    SQLLogger.clear_log
-    yield
-    SQLLogger.log_all.dup
+    failed_patterns = []
+
+    expected.each do |pattern|
+      failed_patterns << pattern unless queries_ran.any?{ |sql| sql_equal(pattern, sql) }
+    end
+
+    assert failed_patterns.empty?, <<~MSG
+      Query pattern(s) not found:
+        - #{failed_patterns.map(&:inspect).join('\n  - ')}
+
+      Queries Ran (queries_ran.size):
+        - #{queries_ran.map{|l| l.gsub(/\n\s*/, "\n    ")}.join("\n  - ")}
+    MSG
+    
+    return_value
   end
 
-  def assert_sql(*patterns_to_match)
-    if patterns_to_match.all? { |s| s.is_a?(String) }
-      assert_equal(*patterns_to_match.take(2).map { |sql| sql.gsub(/( +|\n\s*|\s+)/, ' ').strip })
-    else
-      begin
-        ret_value = nil
-        capture_sql { ret_value = yield }
-        ret_value
-      ensure
-        failed_patterns = []
-        patterns_to_match.each do |pattern|
-          failed_patterns << pattern unless SQLLogger.log_all.any?{ |sql| pattern === sql }
-        end
-        assert failed_patterns.empty?, "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} not found.#{SQLLogger.log.size == 0 ? '' : "\nQueries:\n#{SQLLogger.log.join("\n")}"}"
-      end
+  def assert_no_sql(*not_expected)
+    return_value = nil
+    queries_ran = block_given? ? SQLLogger.log.size : 0
+
+    return_value = yield if block_given?
+
+  ensure
+    failed_patterns = []
+    queries_ran = SQLLogger.log[queries_ran...]
+
+    not_expected.each do |pattern|
+      failed_patterns << pattern if queries_ran.any?{ |sql| sql_equal(pattern, sql) }
     end
+
+    assert failed_patterns.empty?, <<~MSG
+      Unexpected Query pattern(s) found:
+        - #{failed_patterns.map(&:inspect).join('\n  - ')}
+
+      Queries Ran (queries_ran.size):
+        - #{queries_ran.map{|l| l.gsub(/\n\s*/, "\n    ")}.join("\n  - ")}
+    MSG
+    
+    return_value
   end
 
-  def assert_no_sql(*patterns_to_match)
-    if patterns_to_match.all? { |s| s.is_a?(String) }
-      assert_not_equal(*patterns_to_match.take(2).map { |sql| sql.gsub(/( +|\n\s*|\s+)/, ' ').strip })
-    else
-      begin
-        ret_value = nil
-        capture_sql { ret_value = yield }
-        ret_value
-      ensure
-        failed_patterns = []
-        patterns_to_match.each do |pattern|
-          failed_patterns << pattern unless SQLLogger.log_all.any?{ |sql| pattern === sql }
-        end
-        assert !failed_patterns.empty?, "Query pattern(s) #{failed_patterns.map(&:inspect).join(', ')} found.#{SQLLogger.log.size == 0 ? '' : "\nQueries:\n#{SQLLogger.log.join("\n")}"}"
-      end
+  def sql_equal(expected, sql)
+    sql = sql.strip.gsub(/"(\w+)"/, '\1').gsub(/\(\s+/, '(').gsub(/\s+\)/, ')').gsub(/[\s|\n]+/, ' ')
+    if expected.is_a?(String)
+      expected = Regexp.new(Regexp.escape(expected.strip.gsub(/"(\w+)"/, '\1').gsub(/\(\s+/, '(').gsub(/\s+\)/, ')').gsub(/[\s|\n]+/, ' ')), Regexp::IGNORECASE)
     end
+    
+    expected.match(sql)
   end
   
+
   def corpus
     Runestone::Model.connection.execute('SELECT word FROM runestone_corpus ORDER BY word').values.flatten
   end
@@ -157,7 +177,7 @@ class ActiveSupport::TestCase
       self.class.log_all << sql
       unless ignore =~ sql
         if $debugging
-        puts caller.select { |l| l.starts_with?(File.expand_path('../../lib', __FILE__)) }
+        puts caller.select { |l| l.start_with?(File.expand_path('../../lib', __FILE__)) }
         puts "\n\n" 
         end
       end

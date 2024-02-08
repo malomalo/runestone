@@ -51,7 +51,7 @@ module Runestone::ActiveRecord
             AND #{model_table}.id IS NULL;
         SQL
 
-        find_each(&:update_runestones!)
+        find_each { |r| r.update_runestones!(false) }
       end
 
       def highlights(name: :default, dictionary: nil)
@@ -106,10 +106,11 @@ module Runestone::ActiveRecord
       Runestone::IndexingJob.preform_later(self, :update_runestones!)
     end
     
-    def update_runestones!
+    def update_runestones!(if_changed = true)
       conn = Runestone::Model.connection
       self.runestone_settings.each do |index_name, settings|
         settings.each do |setting|
+          next if if_changed && !setting.changed?(self)
           rdata = setting.extract_attributes(self)
 
           if conn.execute(<<-SQL).cmd_tuples == 0

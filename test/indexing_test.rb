@@ -84,7 +84,7 @@ class IndexingTest < ActiveSupport::TestCase
     assert_corpus('address', 'name')
   end
 
-  test 'index gets updated on Model.create' do
+  test 'index gets updated on Model.update' do
     address = Address.create(name: 'Address name')
     assert_no_difference 'Runestone::Model.count' do
       address.update!(name: 'Address name two')
@@ -104,6 +104,175 @@ class IndexingTest < ActiveSupport::TestCase
     })
     
     assert_corpus('address', 'name', 'two')
+  end
+
+  test 'index doesnt update on Model.update when updates dont affect index (column for attribute, depends on itself)' do
+    address = Address.create(name: 'Address name')
+    assert_no_difference 'Runestone::Model.count' do
+      assert_no_sql("UPDATE runestones SET data") do
+        address.update!(metadata: 'extra info not used in index')
+      end
+    end
+
+    assert_equal([[
+      'Address', address.id,
+      {"name" => "Address name"},
+      "'address':1A 'name':2A"
+    ]], address.runestones.map { |runestone|
+      [
+        runestone.record_type,
+        runestone.record_id,
+        runestone.data,
+        runestone.vector
+      ]
+    })
+    
+    assert_corpus('address', 'name')
+  end
+
+  test 'index doesnt update on Model.update when updates dont affect index (proc for attribute, depends on relation)' do
+    property = Property.create(name: 'Property name', addresses: [
+      Address.create(name: 'Address 1'),
+      Address.create(name: 'Address 2')
+    ])
+    
+    assert_no_difference 'Runestone::Model.count' do
+      assert_no_sql("UPDATE runestones SET data") do
+        property.update!(metadata: 'extra info not used in index')
+      end
+    end
+
+    assert_equal([[
+      'Property', property.id,
+      {"name"=>"Property name", "addresses"=>[
+        {"id"=> property.addresses[0].id, "name"=>"Address 1"},
+        {"id"=> property.addresses[1].id, "name"=>"Address 2"}
+      ]},
+      "'1':4C '2':6C 'address':3C,5C 'name':2A 'property':1A"
+    ]], property.runestones.map { |runestone|
+      [
+        runestone.record_type,
+        runestone.record_id,
+        runestone.data,
+        runestone.vector
+      ]
+    })
+
+    assert_corpus("1", "2", "address", "name", "property")
+  end
+  
+  test 'index updates on Model.update when relation is load/changed (proc for attribute, depends on relation)' do
+    property = Property.create(name: 'Property name', addresses: [
+      Address.create(name: 'Address 1'),
+      Address.create(name: 'Address 2')
+    ])
+    
+    assert_no_difference 'Runestone::Model.count' do
+      assert_sql("UPDATE runestones SET data") do
+        property.addresses.first.name = 'Address rename 1'
+        property.save
+      end
+    end
+
+    assert_equal([[
+      'Property', property.id,
+      {"name"=>"Property name", "addresses"=>[
+        {"id"=> property.addresses[0].id, "name"=>"Address 1"},
+        {"id"=> property.addresses[1].id, "name"=>"Address 2"}
+      ]},
+      "'1':4C '2':6C 'address':3C,5C 'name':2A 'property':1A"
+    ]], property.runestones.map { |runestone|
+      [
+        runestone.record_type,
+        runestone.record_id,
+        runestone.data,
+        runestone.vector
+      ]
+    })
+
+    assert_corpus("1", "2", "address", "name", "property", "rename")
+  end
+
+  test 'index doesnt update on Model.update when updates dont affect index (block for attribute, depends on attribute)' do
+    building = Building.create(name_en: 'name', name_ru: 'имя')
+    
+    assert_no_difference 'Runestone::Model.count' do
+      assert_no_sql(/UPDATE runestones\s+SET\s+data = '{"name":"имя"}/i) do
+        building.update!(name_en: 'name 2')
+      end
+    end
+
+    assert_equal([[
+        'Building', building.id,
+        {"name"=>"name 2"},
+        "'2':2A 'name':1A"
+      ], [
+        'Building', building.id,
+        {"name"=>"имя"},
+        "'имя':1A"
+      ]
+    ], building.runestones.map { |runestone|
+      [
+        runestone.record_type,
+        runestone.record_id,
+        runestone.data,
+        runestone.vector
+      ]
+    })
+    
+    assert_corpus('2', 'name', 'м')
+  end
+  
+  test 'index doesnt update on Model.update when updates dont affect index (block for attribute, block for depends)' do
+    record = Person.create(name: 'person')
+    
+    assert_no_difference 'Runestone::Model.count' do
+      assert_no_sql("UPDATE runestones SET data") do
+        record.update!(name: 'ghost', pooblic: false)
+      end
+    end
+
+    assert_equal([[
+        'Person', record.id,
+        {"name"=>"person"},
+        "'person':1A"
+      ]
+    ], record.runestones.map { |runestone|
+      [
+        runestone.record_type,
+        runestone.record_id,
+        runestone.data,
+        runestone.vector
+      ]
+    })
+    
+    assert_corpus('person')
+  end
+  
+  test 'index updates on Model.update when updates affect index (block for attribute, block for depends)' do
+    record = Person.create(name: 'person')
+    
+    assert_no_difference 'Runestone::Model.count' do
+      assert_sql("UPDATE runestones SET data") do
+        record.update!(name: 'physical', pooblic: true)
+      end
+    end
+
+    assert_equal([[
+        'Person', record.id,
+        {"name"=>"physical"},
+        "'physical':1A"
+      ]
+    ], record.runestones.map { |runestone|
+      [
+        runestone.record_type,
+        runestone.record_id,
+        runestone.data,
+        runestone.vector
+      ]
+    })
+    
+    assert_corpus('person', 'physical')
   end
 
   test 'index gets deleted on Model.destroy' do

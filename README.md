@@ -51,7 +51,40 @@ class Building < ApplicationRecord
 end
 ```
 
-When searching the attribute(s) will be available in `data` on the result(s), but only the attributes specified by `index` will indexed and used for searching.
+When searching the attribute(s) will be available in `data` on the result(s),
+but only the attributes specified by `index` will indexed and used for searching.
+
+Generally Runestone will automatically update the search index if changes are
+made. This is done by seeing if the corresponding column or association has
+changed. If your search attribute is generated you need to define on the columns
+or associations it depends on.
+
+```ruby
+class User < ApplicationRecord
+  runestone do
+    # The attribute `:name` is generated from the `name_en` column
+    attribute(:name, :name_en) { name_en }
+  end
+end
+
+class Building < ApplicationRecord
+  runestone do
+    # The attribute `:address_numbers` is generated from the association `addresses`
+    attribute(:address_numbers, :addresses) { addresses.map{ |a| a.number } }
+  end
+end
+
+class User < ActiveRecord::Base
+  runestone do
+    index 'name'
+    
+    # The attribute `:name` is updated when the custom logic proc returns true
+    attribute :name, -> () { ...custom logic... } do
+      name
+    end
+  end
+end
+```
 
 ### Searching
 

@@ -4,7 +4,7 @@ module Runestone::Corpus
     return if words.size == 0
 
     conn = Runestone::Model.connection
-    conn.execute(<<-SQL)
+    conn.execute(<<-SQL.gsub("\n", ' ').gsub(/\s+/, " ").strip)
       INSERT INTO runestone_corpus ( word )
       VALUES (#{words.map { |w| conn.quote(Runestone.normalize(w)) }.join('),(')})
       ON CONFLICT DO NOTHING
@@ -21,7 +21,7 @@ module Runestone::Corpus
     end
     return lut if words.size == 0
     
-    result = conn.execute(<<-SQL)
+    result = conn.execute(<<-SQL.gsub("\n", ' ').gsub(/\s+/, " ").strip)
       WITH  tokens (token, token_downcased, typo_tolerance) AS (VALUES (#{words.join('), (')}))
       SELECT token, word, levenshtein(runestone_corpus.word, tokens.token_downcased)
       FROM tokens

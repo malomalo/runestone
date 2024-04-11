@@ -83,7 +83,7 @@ class ActiveSupport::TestCase
 
     assert failed_patterns.empty?, <<~MSG
       Query pattern(s) not found:
-        - #{failed_patterns.map(&:inspect).join('\n  - ')}
+        - #{failed_patterns.map{|l| l.gsub(/\n\s*/, " ")}.join('\n  - ')}
 
       Queries Ran (queries_ran.size):
         - #{queries_ran.map{|l| l.gsub(/\n\s*/, "\n    ")}.join("\n  - ")}

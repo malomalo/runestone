@@ -1,88 +1,57 @@
+require 'stream_parser'
+
 class Runestone::WebSearch
+  
   autoload :Or, "#{File.dirname(__FILE__)}/web_search/or"
   autoload :And, "#{File.dirname(__FILE__)}/web_search/and"
   autoload :Token, "#{File.dirname(__FILE__)}/web_search/token"
   autoload :Phrase, "#{File.dirname(__FILE__)}/web_search/phrase"
+  autoload :Parser, "#{File.dirname(__FILE__)}/web_search/parser"
+  autoload :Match, "#{File.dirname(__FILE__)}/web_search/match"
+  autoload :Node, "#{File.dirname(__FILE__)}/web_search/node"
+  autoload :Boolean, "#{File.dirname(__FILE__)}/web_search/boolean"
+  autoload :PartialMatch, "#{File.dirname(__FILE__)}/web_search/partial_match"
   
-  class Match
-    attr_accessor :index, :substitution
-    def initialize(index, substitution)
-      @index = index
-      @substitution = substitution
-    end
-  end
-
-  class PartialMatch
-    attr_accessor :start_index, :end_index, :substitution
-    def initialize(start_index, end_index, substitution)
-      @start_index = start_index
-      @end_index = end_index
-      @substitution = substitution
-    end
-  end
-
   attr_accessor :values
-
-  # prefix options: :all, :last, :none (default: :last)
-  def self.parse(query, prefix: :last)
-    prefix ||= :last
-    Runestone.normalize!(query)
-
-    q = []
-    stack = []
-    knot = false
-    tokens = query.gsub(/\"\s+\"/, '""').split(' ')
-    tokens.each_with_index do |token, i|
-      token.gsub!(/\(|\)|:|\||!|\&|\*/, '')
-      if token.start_with?('-')
-        knot = true
-        token.delete_prefix!('-')
-      else
-        knot = false
-      end
-  
-      next if token.empty? || token == '""' || %w(' ").include?(token)
-    
-      if token.start_with?('"') && token.end_with?('"')
-        token.delete_prefix!('"')
-        token.delete_suffix!('"')
-      
-        q << Phrase.new([token], negative: knot)
-      elsif token.start_with?('"')
-        token.delete_prefix!('"')
-        stack.push(:phrase)
-        q << Phrase.new([Token.new(token)], negative: knot)
-      elsif token.end_with?('"')
-        token.delete_suffix!('"')
-        q.last.values << Token.new(token)
-        stack.pop
-      else
-        token = Token.new(token, negative: knot)
-        if !knot && prefix == :last && tokens.size - 1 == i
-          token.prefix = true
-        elsif !knot && prefix == :all
-          token.prefix = true
-        end
-      
-        if stack.last == :phrase
-          q.last.values << token
-        else
-          q << token
-        end
-      end
-    end
-    
-    new(q)
-  end
   
   def initialize(values)
     @values = values
   end
+
+  # prefix options: :all, :last, :none (default: :last)
+  # token.gsub!(/\(|\)|:|\||!|\&|\*/, '')
+  def self.parse(query, prefix: :last)
+    Runestone::WebSearch::Parser.parse(query, prefix: prefix)
+  end
+
+  def postivie_tokens(tokens = @values, return_value = [])
+    case tokens
+    when Array
+      tokens.each { |token| postivie_tokens(token, return_value) }
+    when Runestone::WebSearch::Boolean
+      tokens.values.each { |token| postivie_tokens(token, return_value) } if !tokens.negative
+    when Phrase
+    else
+      return_value << tokens if !tokens.negative
+    end
+    return_value
+  end
+  
+  def clone_nodes(nodes = @values, &block)
+    nodes.map do |node|
+      case node
+      when Boolean
+        yield node.class.new(clone_nodes(node.values, &block), negative: node.negative)
+      else
+        yield node
+      end
+    end
+  end
   
   def typos
-    tokens = @values.select{|t| t.is_a?(Token) && !t.negative }
+    tokens = postivie_tokens
     sw = Runestone::Corpus.similar_words(*tokens.map(&:value))
-    q = @values.map do |t|
+    q = clone_nodes do |t|
       if t.is_a?(Token) && sw.has_key?(t.value)
         Token.new(t.value, prefix: t.prefix, negative: t.negative, alts: sw[t.value])
       else
@@ -92,11 +61,11 @@ class Runestone::WebSearch
     
     Runestone::WebSearch.new(q)
   end
-  
+
   def synonymize
     parts = []
     @values.each do |token|
-      if token.is_a?(Phrase) || token.negative
+      if token.is_a?(Phrase) || token.is_a?(Boolean) || (token.is_a?(Token) && token.negative)
         parts << token
       else
         parts << [] if parts.empty? || parts.last.is_a?(Phrase) || (!parts.last.is_a?(Array) && parts.last.negative)
@@ -105,22 +74,30 @@ class Runestone::WebSearch
     end
 
     parts.map! do |part|
-      if !part.is_a?(Phrase) && (part.is_a?(Array) || !part.negative)
-        synonymize_part(part)
-      else
-        part
-      end
+      synonymize_part(part)
     end
 
     Runestone::WebSearch.new(parts)
   end
 
   def synonymize_part(part)
+    case part
+    when Array
+      synonymize_webserach(part)
+    when Or
+      part.class.new(part.values.map { |p| p.negative ? p : synonymize_part(p) }, negative: part.negative)
+    when And
+      part.class.new(synonymize_part(part.values.dup), negative: part.negative)
+    else
+      part
+    end
+  end
+  
+  def synonymize_webserach(part)
     pending_matches = []
     matches = []
-    
+
     part.each_with_index do |token, i|
-      
       pending_matches.select! do |match|
         if match.end_index + 1 == i && match.substitution[token.value]
           match.substitution[token.value].map do |nm|
@@ -129,7 +106,7 @@ class Runestone::WebSearch
               match.alts = nm
               true
             else
-              matches << Match.new(match.start_index..i, Phrase.new(Array(nm), distance: 1))
+              matches << Match.new(match.start_index..i, Phrase.new(nm.split(/\s+/), distance: 1))
               false
             end
           end
@@ -138,7 +115,7 @@ class Runestone::WebSearch
         end
       end
 
-      if match = Runestone.synonyms[token.value]
+      if !token.negative && !token.phrase? && match = Runestone.synonyms[token.value]
         match.each do |m|
           if m.is_a?(Hash)
             pending_matches << PartialMatch.new(i, i, m)
@@ -147,27 +124,25 @@ class Runestone::WebSearch
           end
         end
       end
-      
     end
 
     matches.select! do |match|
       if match.index.is_a?(Integer)
         case part[match.index]
         when Or
-          part[match.index].values << match.substitution
+          part[match.index] = Or.new(part[match.index].values + [match.substitution])
         else
           part[match.index] = Or.new([part[match.index], match.substitution])
         end
-
         false
       else
         true
       end
     end
 
-    groups = matches.inject([]) do |memo, match|
-      if memo.empty?
-        memo << [match]
+    groups = matches.sort_by { |m| -m.index.size}.inject([]) do |memo, match|
+      if i = memo.index { |k| k.all? { |j| j.index.cover?(match.index) } }
+        memo[i] << match
       elsif i = memo.index { |k| k.none? { |j| j.index.overlaps?(match.index) } }
         memo[i] << match
       else
@@ -180,14 +155,27 @@ class Runestone::WebSearch
       And.new(part)
     else
       orrs = Or.new([])
+
       groups.each do |g|
-        p = []
-        p << And.new(part[0..g.first.index.begin-1]) if g.first.index.begin > 0
-        g.each do |m|
-          p << Or.new([And.new(part[m.index]), m.substitution])
+        p = And.new
+        p.values.push(*part[0..g.first.index.begin-1]) if g.first.index.begin > 0
+        range = nil
+        p.values << Or.new
+        g.inject(p.values.last) do |orr, m|
+          new_or = if range.nil? || range == m.index
+            orr << m.substitution
+          else
+            o = Or.new(part[m.index.end..range.begin])
+            orr << o
+            o << m.substitution
+          end
+          range = m.index
+          new_or
         end
-        p << And.new(part[g.last.index.end+1..-1]) if g.last.index.end < part.size
-        orrs.values << And.new(p)
+        p.values.last.values.unshift(And.new(part[range]))# if range.size > 1
+
+        p.values.push(*part[g.last.index.end+1..-1]) if g.last.index.end < part.size
+        orrs.values << p
       end
       orrs
     end

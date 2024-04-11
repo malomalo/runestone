@@ -1,5 +1,7 @@
-class Runestone::WebSearch::Phrase
+class Runestone::WebSearch::Phrase < Runestone::WebSearch::Node
+
   attr_accessor :values, :prefix, :negative, :distance
+
   def initialize(values, prefix: false, negative: false, distance: nil)
     @values = values
     @prefix = prefix
@@ -16,4 +18,9 @@ class Runestone::WebSearch::Phrase
     end
     negative ? "!#{v}" : v
   end
+  
+  def phrase?
+    true
+  end
+  
 end

@@ -18,14 +18,16 @@ module Runestone
   end
   
   def self.normalize(string)
-    string = string.downcase
-    string = string.unicode_normalize!
+    string = string.strip
+    string.downcase!
+    string.unicode_normalize!
     string
   rescue Encoding::CompatibilityError
     string
   end
 
   def self.normalize!(string)
+    string.strip!
     string.downcase!
     string.unicode_normalize!
   rescue Encoding::CompatibilityError
@@ -69,6 +71,7 @@ module Runestone
     tsqueries = [exact_search, typo_search, syn_search].map(&:to_s).uniq.map do |q|
       ts_query(q, dictionary: dictionary)
     end
+    puts tsqueries.inspect
     
     q = if select_values.empty?
       select(

@@ -1,10 +1,5 @@
-class Runestone::WebSearch::And
-  attr_accessor :values, :negative
-  def initialize(values, negative: false)
-    @values = values
-    @negative = negative
-  end
-  
+class Runestone::WebSearch::And < Runestone::WebSearch::Boolean
+
   def to_s
     v = if values.size == 1
       values.first.to_s
@@ -14,4 +9,5 @@ class Runestone::WebSearch::And
 
     negative ? "!#{v}" : v
   end
+
 end

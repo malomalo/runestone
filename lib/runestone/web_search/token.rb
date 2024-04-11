@@ -1,5 +1,7 @@
-class Runestone::WebSearch::Token
+class Runestone::WebSearch::Token < Runestone::WebSearch::Node
+  
   attr_accessor :value, :prefix, :negative, :alts
+
   def initialize(value, prefix: false, negative: false, alts: nil)
     @value = value
     @prefix = prefix

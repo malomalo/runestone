@@ -16,13 +16,13 @@ class Runestone::WebSearch::Token < Runestone::WebSearch::Node
       if alts.empty?
         "#{value}:*"
       else
-        "(#{value}:* | #{alts.join(' | ')})"
+        "#{value}:* | #{alts.map(&:to_s).join(' | ')}"
       end
     else
       if alts.empty?
         value
       else
-        "(#{value} | #{alts.join(' | ')})"
+        "#{value} | #{alts.map(&:to_s).join(' | ')}"
       end
     end
   end
@@ -47,4 +47,5 @@ class Runestone::WebSearch::Token < Runestone::WebSearch::Node
   def token?
     true
   end
+  
 end

@@ -79,9 +79,9 @@ class QueryTest < ActiveSupport::TestCase
     query = Runestone::Model.search('my search | your token')
 
     assert_sql(<<~SQL, query.to_sql)
-      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my & search:* | your & token:*)'), 16) AS rank0
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my & search:*) | (your & token:*)'), 16) AS rank0
       FROM "runestones"
-      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my & search:* | your & token:*)')
+      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my & search:*) | (your & token:*)')
       ORDER BY rank0 DESC
     SQL
   end
@@ -90,9 +90,9 @@ class QueryTest < ActiveSupport::TestCase
     query = Runestone::Model.search('my search | your token', prefix: :none)
 
     assert_sql(<<~SQL, query.to_sql)
-      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my & search | your & token)'), 16) AS rank0
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my & search) | (your & token)'), 16) AS rank0
       FROM "runestones"
-      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my & search | your & token)')
+      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my & search) | (your & token)')
       ORDER BY rank0 DESC
     SQL
   end
@@ -101,9 +101,9 @@ class QueryTest < ActiveSupport::TestCase
     query = Runestone::Model.search('my search | your token', prefix: :all)
 
     assert_sql(<<~SQL, query.to_sql)
-      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my:* & search:* | your:* & token:*)'), 16) AS rank0
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my:* & search:*) | (your:* & token:*)'), 16) AS rank0
       FROM "runestones"
-      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my:* & search:* | your:* & token:*)')
+      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my:* & search:*) | (your:* & token:*)')
       ORDER BY rank0 DESC
     SQL
   end
@@ -112,9 +112,9 @@ class QueryTest < ActiveSupport::TestCase
     query = Runestone::Model.search('my search | your token', prefix: :last)
 
     assert_sql(<<~SQL, query.to_sql)
-      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my & search:* | your & token:*)'), 16) AS rank0
+      SELECT "runestones".*, ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(my & search:*) | (your & token:*)'), 16) AS rank0
       FROM "runestones"
-      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my & search:* | your & token:*)')
+      WHERE "runestones"."vector" @@ to_tsquery('runestone', '(my & search:*) | (your & token:*)')
       ORDER BY rank0 DESC
     SQL
   end
@@ -175,14 +175,14 @@ class QueryTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "properties".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(seaerch & for & this:* | for & thiss:*)'), 16) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '((seaerch | search) & for & this:* | for & (thiss:* | this))'), 16) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(seaerch & for & this:*) | (for & thiss:*)'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '((seaerch | search) & for & this:*) | (for & (thiss:* | this))'), 16) AS rank1
       FROM "properties"
       INNER JOIN "runestones"
         ON "runestones"."record_type" = 'Property'
         AND "runestones"."record_id" = "properties"."id"
       WHERE
-        "runestones"."vector" @@ to_tsquery('runestone', '((seaerch | search) & for & this:* | for & (thiss:* | this))')
+        "runestones"."vector" @@ to_tsquery('runestone', '((seaerch | search) & for & this:*) | (for & (thiss:* | this))')
       ORDER BY
         rank0 DESC,
         rank1 DESC
@@ -201,11 +201,11 @@ class QueryTest < ActiveSupport::TestCase
       SELECT
         "runestones".*,
         ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:*'), 16) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(avenue:* | aveneue)'), 16) AS rank1,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '((avenue:* | aveneue) | av | ave | avn | aven | avenu | avnue)'), 16) AS rank2
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue'), 16) AS rank1,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | av | ave | avn | aven | avenu | avnue'), 16) AS rank2
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('runestone', '((avenue:* | aveneue) | av | ave | avn | aven | avenu | avnue)')
+        "runestones"."vector" @@ to_tsquery('runestone', 'avenue:* | aveneue | av | ave | avn | aven | avenu | avnue')
       ORDER BY
         rank0 DESC,
         rank1 DESC,

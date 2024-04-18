@@ -1,7 +1,15 @@
 class Runestone::WebSearch::Or < Runestone::WebSearch::Boolean
 
   def to_s
-    "(#{values.map(&:to_s).join(' | ')})"
+    v = if values.size == 1
+      values.first.to_s
+    else
+      values.map do |node|
+        node.is_a?(Runestone::WebSearch::Boolean) ? "(#{node.to_s})" : node.to_s
+      end.join(' | ')
+    end
+
+    negative ? "!(#{v})" : v
   end
 
   def prefix!(mode = :last)

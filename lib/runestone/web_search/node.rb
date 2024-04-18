@@ -35,21 +35,17 @@ class Runestone::WebSearch::Node
     matches = []
 
     part.each_with_index do |node, i|
-      pending_matches.select! do |match|
+      pending_matches = pending_matches.inject([]) do |memo, match|
         if node.token? && match.end_index + 1 == i && match.substitution[node.value]
           match.substitution[node.value].map do |nm|
             if nm.is_a?(Hash)
-              match.end_index = i
-              match.alts = nm
-              true
+              memo << Runestone::WebSearch::PartialMatch.new(match.start_index, i, nm)
             else
               matches << Runestone::WebSearch::Match.new(match.start_index..i, Runestone::WebSearch::Phrase.new(*nm.split(/\s+/), distance: 1))
-              false
             end
           end
-        else
-          false
         end
+        memo
       end
 
       if node.token? && !node.negative && match = Runestone.synonyms[node.value]

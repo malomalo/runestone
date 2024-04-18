@@ -2,7 +2,7 @@ class Runestone::WebSearch::Phrase < Runestone::WebSearch::Node
 
   attr_accessor :values, :prefix, :negative, :distance
 
-  def initialize(values, prefix: false, negative: false, distance: nil)
+  def initialize(*values, prefix: false, negative: false, distance: nil)
     @values = values
     @prefix = prefix
     @negative = negative
@@ -23,4 +23,15 @@ class Runestone::WebSearch::Phrase < Runestone::WebSearch::Node
     true
   end
   
+  def empty?
+    @values.empty?
+  end
+  
+  def corpus(set = Set.new)
+    set
+  end
+  
+  def <<(value)
+    @values << value
+  end
 end

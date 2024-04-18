@@ -71,7 +71,6 @@ module Runestone
     tsqueries = [exact_search, typo_search, syn_search].map(&:to_s).uniq.map do |q|
       ts_query(q, dictionary: dictionary)
     end
-    puts tsqueries.inspect
     
     q = if select_values.empty?
       select(

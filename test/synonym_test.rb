@@ -9,7 +9,7 @@ class SynonymTest < ActiveSupport::TestCase
     })
 
     query = Runestone::Model.search('17 spruce')
-
+    
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
@@ -21,7 +21,7 @@ class SynonymTest < ActiveSupport::TestCase
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end
-
+  
   test '::synonyms expanded to two words' do
     Runestone.add_synonyms({
       'supernovae' => ['super novae']
@@ -36,7 +36,7 @@ class SynonymTest < ActiveSupport::TestCase
       'spruce' => %w(pine)
     })
     query = Runestone::Model.search('17 Spruce')
-
+    
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
@@ -55,7 +55,7 @@ class SynonymTest < ActiveSupport::TestCase
       'spruce' => %w(pine)
     })
     query = Runestone::Model.search('17 -spruce')
-
+    
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
@@ -74,7 +74,7 @@ class SynonymTest < ActiveSupport::TestCase
       'spruce' => %w(pine)
     })
     query = Runestone::Model.search('17 "spruce"')
-
+    
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
@@ -86,7 +86,7 @@ class SynonymTest < ActiveSupport::TestCase
       ORDER BY rank0 DESC, rank1 DESC
     SQL
   end
-
+  
   test '::synonym expanded for misspellings' do
     Runestone::Corpus.add(*%w{17 seventeen spruce pine plne})
     Runestone.add_synonyms({
@@ -94,7 +94,7 @@ class SynonymTest < ActiveSupport::TestCase
       'spruce' => %w(pine)
     })
     query = Runestone::Model.search('17 spruce')
-
+    
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
@@ -112,7 +112,7 @@ class SynonymTest < ActiveSupport::TestCase
       'one hundred' => ['100', 'one hundy']
     })
     query = Runestone::Model.search('one hundred spruce')
-
+    
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,

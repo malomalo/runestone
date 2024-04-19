@@ -1,4 +1,4 @@
-class Runestone::WebSearch::Boolean < Runestone::WebSearch::Node
+class Runestone::Node::Boolean < Runestone::Node
 
   attr_accessor :values, :negative
 

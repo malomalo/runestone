@@ -1,6 +1,8 @@
 require 'arel/extensions'
 
 module Runestone
+  
+  autoload :Node, "#{File.dirname(__FILE__)}/runestone/node"
   autoload :Model, "#{File.dirname(__FILE__)}/runestone/model"
   autoload :Settings, "#{File.dirname(__FILE__)}/runestone/settings"
   autoload :WebSearch, "#{File.dirname(__FILE__)}/runestone/web_search"

@@ -1,4 +1,10 @@
-class Runestone::WebSearch::Node
+class Runestone::Node
+
+  autoload :Or, "#{File.dirname(__FILE__)}/node/or"
+  autoload :And, "#{File.dirname(__FILE__)}/node/and"
+  autoload :Token, "#{File.dirname(__FILE__)}/node/token"
+  autoload :Boolean, "#{File.dirname(__FILE__)}/node/boolean"
+  autoload :Phrase, "#{File.dirname(__FILE__)}/node/phrase"
 
   def phrase?
     false
@@ -41,7 +47,7 @@ class Runestone::WebSearch::Node
             if nm.is_a?(Hash)
               memo << Runestone::WebSearch::PartialMatch.new(match.start_index, i, nm)
             else
-              matches << Runestone::WebSearch::Match.new(match.start_index..i, Runestone::WebSearch::Phrase.new(*nm.split(/\s+/), distance: 1))
+              matches << Runestone::WebSearch::Match.new(match.start_index..i, Runestone::Node::Phrase.new(*nm.split(/\s+/), distance: 1))
             end
           end
         end
@@ -53,7 +59,7 @@ class Runestone::WebSearch::Node
           if m.is_a?(Hash)
             pending_matches << Runestone::WebSearch::PartialMatch.new(i, i, m)
           else
-            matches << Runestone::WebSearch::Match.new(i, Runestone::WebSearch::Phrase.new(*m.split(/\s+/), distance: 1))
+            matches << Runestone::WebSearch::Match.new(i, Runestone::Node::Phrase.new(*m.split(/\s+/), distance: 1))
           end
         end
       end
@@ -62,10 +68,10 @@ class Runestone::WebSearch::Node
     matches.select! do |match|
       if match.index.is_a?(Integer)
         case part[match.index]
-        when Runestone::WebSearch::Or
-          part[match.index] = Runestone::WebSearch::Or.new(*part[match.index].values, *match.substitution)
+        when Runestone::Node::Or
+          part[match.index] = Runestone::Node::Or.new(*part[match.index].values, *match.substitution)
         else
-          part[match.index] = Runestone::WebSearch::Or.new(*part[match.index], *match.substitution)
+          part[match.index] = Runestone::Node::Or.new(*part[match.index], *match.substitution)
         end
         false
       else
@@ -85,15 +91,15 @@ class Runestone::WebSearch::Node
     end
 
     if groups.empty?
-      Runestone::WebSearch::And.new(*part)
+      Runestone::Node::And.new(*part)
     else
-      orrs = Runestone::WebSearch::Or.new
+      orrs = Runestone::Node::Or.new
 
       groups.each do |g|
-        p = Runestone::WebSearch::And.new
+        p = Runestone::Node::And.new
         p.values.push(*part[0..g.first.index.begin-1]) if g.first.index.begin > 0
         range = nil
-        p.values << Runestone::WebSearch::Or.new
+        p.values << Runestone::Node::Or.new
         g.inject(p.values.last) do |orr, m|
           new_or = if range.nil? || range == m.index
             orr << m.substitution
@@ -105,7 +111,7 @@ class Runestone::WebSearch::Node
           range = m.index
           new_or
         end
-        p.values.last.values.unshift(Runestone::WebSearch::And.new(*part[range]))# if range.size > 1
+        p.values.last.values.unshift(Runestone::Node::And.new(*part[range]))# if range.size > 1
 
         p.values.push(*part[g.last.index.end+1..-1]) if g.last.index.end < part.size
         orrs.values << p

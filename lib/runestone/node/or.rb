@@ -1,11 +1,11 @@
-class Runestone::WebSearch::Or < Runestone::WebSearch::Boolean
+class Runestone::Node::Or < Runestone::Node::Boolean
 
   def to_s
     v = if values.size == 1
       values.first.to_s
     else
       values.map do |node|
-        node.is_a?(Runestone::WebSearch::Boolean) ? "(#{node.to_s})" : node.to_s
+        node.is_a?(Runestone::Node::Boolean) ? "(#{node.to_s})" : node.to_s
       end.join(' | ')
     end
 
@@ -21,7 +21,7 @@ class Runestone::WebSearch::Or < Runestone::WebSearch::Boolean
       node.token? && node.negative ? node : node.synonymize
     end
 
-    Runestone::WebSearch::Or.new(*new_parts, negative: @negative)
+    Runestone::Node::Or.new(*new_parts, negative: @negative)
   end
 
 end

@@ -1,4 +1,4 @@
-class Runestone::WebSearch::Phrase < Runestone::WebSearch::Node
+class Runestone::Node::Phrase < Runestone::Node
 
   attr_accessor :values, :prefix, :negative, :distance
 

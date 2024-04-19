@@ -13,7 +13,7 @@ class Runestone::WebSearch::Parser
     prefix ||= :last
 
     @stack = []
-    @query = [Runestone::WebSearch::And.new]
+    @query = [Runestone::Node::And.new]
 
     while !eos?
       case @stack.last
@@ -26,7 +26,7 @@ class Runestone::WebSearch::Parser
             @query.last << phrase
           end
         else
-          @query.last << Runestone::WebSearch::Token.new(match)
+          @query.last << Runestone::Node::Token.new(match)
         end
 
       else
@@ -42,13 +42,13 @@ class Runestone::WebSearch::Parser
           @stack << :not
         when '"'
           @stack << :double_quote
-          @query << Runestone::WebSearch::Phrase.new(negative: knot)
+          @query << Runestone::Node::Phrase.new(negative: knot)
         when "|"
           @stack << :or
-          @query << Runestone::WebSearch::Or.new(@query.pop) if !@query.last.is_a?(Runestone::WebSearch::Or)
-          @query << Runestone::WebSearch::And.new
+          @query << Runestone::Node::Or.new(@query.pop) if !@query.last.is_a?(Runestone::Node::Or)
+          @query << Runestone::Node::And.new
         else
-          @query.last << Runestone::WebSearch::Token.new(
+          @query.last << Runestone::Node::Token.new(
             match,
             negative: knot,
             prefix: !knot && prefix == :all
@@ -58,7 +58,7 @@ class Runestone::WebSearch::Parser
     end
     
     # Check for unfinished empty phrases and remove it
-    if @query.last.is_a?(Runestone::WebSearch::Phrase)
+    if @query.last.is_a?(Runestone::Node::Phrase)
       @query.pop if @query.last.values.empty?
     end
 

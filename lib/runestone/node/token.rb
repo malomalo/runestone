@@ -1,4 +1,4 @@
-class Runestone::WebSearch::Token < Runestone::WebSearch::Node
+class Runestone::Node::Token < Runestone::Node
   
   attr_accessor :value, :prefix, :negative, :alts
 
@@ -38,7 +38,7 @@ class Runestone::WebSearch::Token < Runestone::WebSearch::Node
   
   def with_typo_correction(typos = self.typos)
     if !@negative && typos.has_key?(@value)
-      Runestone::WebSearch::Token.new(@value, prefix: @prefix, alts: typos[@value])
+      Runestone::Node::Token.new(@value, prefix: @prefix, alts: typos[@value])
     else
       self
     end

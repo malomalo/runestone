@@ -1,13 +1,13 @@
-class Runestone::WebSearch::And < Runestone::WebSearch::Boolean
+class Runestone::Node::And < Runestone::Node::Boolean
 
   def to_s
     v = if values.size == 1
       values.first.to_s
     else
       values.map do |node|
-        if node.is_a?(Runestone::WebSearch::Boolean)
+        if node.is_a?(Runestone::Node::Boolean)
           "(#{node.to_s})"
-        elsif node.is_a?(Runestone::WebSearch::Token) && !node.alts.empty?
+        elsif node.is_a?(Runestone::Node::Token) && !node.alts.empty?
           "(#{node.to_s})"
         else
           node.to_s
@@ -23,7 +23,7 @@ class Runestone::WebSearch::And < Runestone::WebSearch::Boolean
   end
 
   def synonymize
-    Runestone::WebSearch::And.new(*synonymize_parts(@values.dup), negative: @negative)
+    Runestone::Node::And.new(*synonymize_parts(@values.dup), negative: @negative)
   end
 
 end

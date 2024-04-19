@@ -6,10 +6,6 @@ class Runestone::Node
   autoload :Boolean, "#{File.dirname(__FILE__)}/node/boolean"
   autoload :Phrase, "#{File.dirname(__FILE__)}/node/phrase"
 
-  def phrase?
-    false
-  end
-
   def token?
     false
   end

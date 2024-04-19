@@ -6,6 +6,12 @@ class Runestone::WebSearch::Parser
   
   def initialize(query)
     @source = Runestone.normalize!(query)
+    
+    # TODO:
+    # For now we can't search for tokens, i think we will need to use
+    # $$ string and write our own pg parser to search them re:
+    # https://dba.stackexchange.com/questions/180303/how-can-i-query-for-terms-like-foo-with-postgres-full-text-search
+    @source.gsub!(/\(|\)|:|\'|!|\&|\*/, '')
     seek(0)
   end
 

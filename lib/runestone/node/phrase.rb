@@ -19,10 +19,6 @@ class Runestone::Node::Phrase < Runestone::Node
     negative ? "!#{v}" : v
   end
   
-  def phrase?
-    true
-  end
-  
   def empty?
     @values.empty?
   end

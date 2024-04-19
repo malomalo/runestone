@@ -93,17 +93,18 @@ class SynonymTest < ActiveSupport::TestCase
       '17' => %w(17th seventeen seventeenth),
       'spruce' => %w(pine)
     })
-    query = Runestone::Model.search('17 spruce')
+    query = Runestone::Model.search('17 sprice')
     
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & spruce:*'), 16) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)'), 16) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & sprice:*'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & (sprice:* | spruce)'), 16) AS rank1,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (sprice:* | spruce | pine)'), 16) AS rank2
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
-      ORDER BY rank0 DESC, rank1 DESC
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (sprice:* | spruce | pine)')
+      ORDER BY rank0 DESC, rank1 DESC, rank2 DESC
     SQL
   end
 
@@ -195,26 +196,48 @@ class SynonymTest < ActiveSupport::TestCase
     SQL
   end
 
-  # test '::synonym expanded for misspellings' do
-  #   Runestone::Corpus.add(*%w{17 seventeen spruce pine plne})
-  #   Runestone.add_synonyms({
-  #     '17' => %w(17th seventeen seventeenth),
-  #     'spruce' => %w(pine)
-  #   })
-  #   query = Runestone::Model.search('17 spruce')
-  #
-  #   assert_sql(<<~SQL, query.to_sql)
-  #     SELECT
-  #       "runestones".*,
-  #       ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & spruce:*'), 16) AS rank0,
-  #       ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)'), 16) AS rank1
-  #     FROM "runestones"
-  #     WHERE
-  #       "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (spruce:* | pine)')
-  #     ORDER BY rank0 DESC, rank1 DESC
-  #   SQL
-  # end
-  #
+  test '::synonym expanded for misspellingsx' do
+    Runestone::Corpus.add(*%w{17 seventeen spruce pine})
+    Runestone.add_synonyms({
+      '17' => %w(17th seventeen seventeenth),
+      'spruce' => %w(pine)
+    })
+    query = Runestone::Model.search('17 sprice')
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT
+        "runestones".*,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & sprice:*'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & (sprice:* | spruce)'), 16) AS rank1,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (sprice:* | spruce | pine)'), 16) AS rank2
+      FROM "runestones"
+      WHERE
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (sprice:* | spruce | pine)')
+      ORDER BY rank0 DESC, rank1 DESC, rank2 DESC
+    SQL
+  end
+  
+  test '::synonym expanded for misspellingsbx' do
+    Runestone::Corpus.add(*%w{17 seventeen bean spruce pine})
+    Runestone.add_synonyms({
+      '17' => %w(17th seventeen seventeenth),
+      'spruce bean street' => "pine bean st"
+    })
+    query = Runestone::Model.search('17 sprice beat street')
+
+    assert_sql(<<~SQL, query.to_sql)
+      SELECT
+        "runestones".*,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & sprice & beat & street:*'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '17 & (sprice | spruce) & (beat | bean) & street:*'), 16) AS rank1,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (((sprice | spruce) & (beat | bean) & street:*) | (pine <1> bean <1> st))'), 16) AS rank2
+      FROM "runestones"
+      WHERE
+        "runestones"."vector" @@ to_tsquery('runestone', '(17 | 17th | seventeen | seventeenth) & (((sprice | spruce) & (beat | bean) & street:*) | (pine <1> bean <1> st))')
+      ORDER BY rank0 DESC, rank1 DESC, rank2 DESC
+    SQL
+  end
+
   test '::synonym phrase substitution with ors' do
     Runestone.add_synonyms({
       'one hundred' => ['100', 'one hundy'],

@@ -42,24 +42,31 @@ class Runestone::Node
 
     part.each_with_index do |node, i|
       pending_matches = pending_matches.inject([]) do |memo, match|
-        if node.token? && match.end_index + 1 == i && match.substitution[node.value]
-          match.substitution[node.value].map do |nm|
-            if nm.is_a?(Hash)
-              memo << Runestone::WebSearch::PartialMatch.new(match.start_index, i, nm)
-            else
-              matches << Runestone::WebSearch::Match.new(match.start_index..i, Runestone::Node::Phrase.new(*nm.split(/\s+/), distance: 1))
+        if node.token? && !node.negative && match.end_index + 1 == i
+          node.each_variation do |variation|
+            if match.substitution[variation]
+              match.substitution[variation].map do |nm|
+                if nm.is_a?(Hash)
+                  memo << Runestone::WebSearch::PartialMatch.new(match.start_index, i, nm)
+                else
+                  matches << Runestone::WebSearch::Match.new(match.start_index..i, Runestone::Node::Phrase.new(*nm.split(/\s+/), distance: 1))
+                end
+              end
             end
           end
+          
         end
         memo
       end
 
-      if node.token? && !node.negative && match = Runestone.synonyms[node.value]
-        match.each do |m|
-          if m.is_a?(Hash)
-            pending_matches << Runestone::WebSearch::PartialMatch.new(i, i, m)
-          else
-            matches << Runestone::WebSearch::Match.new(i, Runestone::Node::Phrase.new(*m.split(/\s+/), distance: 1))
+      if node.token? && !node.negative
+        node.each_variation do |variation|
+          Runestone.synonyms[variation]&.each do |m|
+            if m.is_a?(Hash)
+              pending_matches << Runestone::WebSearch::PartialMatch.new(i, i, m)
+            else
+              matches << Runestone::WebSearch::Match.new(i, Runestone::Node::Phrase.new(*m.split(/\s+/), distance: 1))
+            end
           end
         end
       end

@@ -27,6 +27,11 @@ class Runestone::Node::Token < Runestone::Node
     end
   end
   
+  def each_variation
+    yield value
+    alts.each { |alt| yield(alt) }
+  end
+  
   def prefix!(mode = nil)
     @prefix = true
   end

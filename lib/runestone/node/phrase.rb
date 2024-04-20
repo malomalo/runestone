@@ -13,10 +13,9 @@ class Runestone::Node::Phrase < Runestone::Node
     v = if values.size == 1
       values.first.to_s
     else
-      seperator = distance ? " <#{distance}> " : ' <-> '
-      "(#{values.map(&:to_s).join(seperator)})"
+      values.map(&:to_s).join(seperator)
     end
-    negative ? "!#{v}" : v
+    negative ? "!(#{v})" : v
   end
   
   def empty?
@@ -29,5 +28,13 @@ class Runestone::Node::Phrase < Runestone::Node
   
   def <<(value)
     @values << value
+  end
+  
+  def size
+    @values.size
+  end
+  
+  def seperator
+    distance ? " <#{distance}> " : ' <-> '
   end
 end

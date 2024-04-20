@@ -50,9 +50,14 @@ class Runestone::WebSearch::Parser
           @stack << :double_quote
           @query << Runestone::Node::Phrase.new(negative: knot)
         when "|"
-          @stack << :or
-          @query << Runestone::Node::Or.new(@query.pop) if !@query.last.is_a?(Runestone::Node::Or)
-          @query << Runestone::Node::And.new
+          next_leaf = @query.pop
+          if @stack.last == :or
+            @query.last << next_leaf
+            @query << Runestone::Node::And.new
+          else
+            @stack << :or
+            @query << Runestone::Node::Or.new(next_leaf) << Runestone::Node::And.new
+          end
         else
           @query.last << Runestone::Node::Token.new(
             match,
@@ -68,17 +73,20 @@ class Runestone::WebSearch::Parser
       @query.pop if @query.last.values.empty?
     end
 
-    while !@stack.empty?
-      case @stack.pop
-      when :or
-        phrase = @query.pop
-        @query.last << phrase
-      end
+    if @stack.last == :or
+      @stack.pop
+      phrase = @query.pop
+      @query.last << phrase
     end
 
-    @query.last.prefix!(:last) if prefix == :last
+    root = if @query.last.is_a?(Runestone::Node::Boolean) && @query.last.size == 1
+      @query.last.values.first
+    else
+      @query.last
+    end
+    root.prefix!(:last) if prefix == :last
     
-    Runestone::WebSearch.new(@query.last)
+    Runestone::WebSearch.new(root)
   end
 
 end

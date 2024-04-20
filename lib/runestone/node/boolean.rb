@@ -10,4 +10,8 @@ class Runestone::Node::Boolean < Runestone::Node
   def <<(value)
     @values << value
   end
+  
+  def size
+    @values.size
+  end
 end

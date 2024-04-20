@@ -5,12 +5,10 @@ class Runestone::Node::And < Runestone::Node::Boolean
       values.first.to_s
     else
       values.map do |node|
-        if node.is_a?(Runestone::Node::Boolean)
-          "(#{node.to_s})"
-        elsif node.is_a?(Runestone::Node::Token) && !node.alts.empty?
-          "(#{node.to_s})"
-        else
+        if node.is_a?(Runestone::Node::Phrase) || node.size == 1
           node.to_s
+        else
+          "(#{node.to_s})"
         end
       end.join(' & ')
     end

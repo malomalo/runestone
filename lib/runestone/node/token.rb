@@ -53,4 +53,12 @@ class Runestone::Node::Token < Runestone::Node
     true
   end
   
+  def size
+    1 + alts.size
+  end
+
+  def synonymize
+    Runestone::Node::Or.new(*synonymize_parts([self]), negative: @negative)
+  end
+
 end

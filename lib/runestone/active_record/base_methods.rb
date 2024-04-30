@@ -27,13 +27,13 @@ module Runestone::ActiveRecord
               after_commit :update_runestones, on: :update
             else
               after_create :create_runestones!
-              after_update :update_runestones!
+              after_update { update_runestones!(changed_runestone_indexes) }
             end
           end
         end
         
-        self.runestone_settings[name] ||= []
-        self.runestone_settings[name] << Runestone::Settings.new(base_class.name, name: name, dictionary: dictionary, &block)
+        self.runestone_settings[name] ||= {}
+        self.runestone_settings[name][dictionary.to_sym] = Runestone::Settings.new(base_class.name, name: name, dictionary: dictionary, &block)
       end
 
       def reindex!
@@ -51,13 +51,13 @@ module Runestone::ActiveRecord
             AND #{model_table}.id IS NULL;
         SQL
 
-        find_each { |r| r.update_runestones!(false) }
+        find_each { |r| r.update_runestones! }
       end
 
       def highlights(name: :default, dictionary: nil)
         dictionary ||= Runestone.dictionary
 
-        rsettings = self.runestone_settings[name].find { |s| s.dictionary.to_s == dictionary.to_s }
+        rsettings = self.runestone_settings[name][dictionary.to_sym]
         @highlights ||= highlight_indexes(rsettings.indexes.values.flatten.map{ |i| i.to_s.split('.') })
       end
 
@@ -80,7 +80,7 @@ module Runestone::ActiveRecord
     def create_runestones!
       conn = Runestone::Model.connection
       self.runestone_settings.each do |index_name, settings|
-        settings.each do |setting|
+        settings.each do |dictionary, setting|
           rdata = setting.extract_attributes(self)
 
           ts_column_names = %w(record_type record_id name dictionary data vector).map { |name| conn.quote_column_name(name) }
@@ -102,33 +102,49 @@ module Runestone::ActiveRecord
       end
     end
     
-    def update_runestones
-      Runestone::IndexingJob.preform_later(self, :update_runestones!)
+    def changed_runestone_indexes
+      changed_indexes =[]
+      runestone_settings.each do |name, value|
+        value.each do |dictionary, setting|
+          changed_indexes << setting if setting.changed?(self)
+        end
+      end
+      
+      changed_indexes
     end
     
-    def update_runestones!(if_changed = true)
+    def update_runestones
+      Runestone::IndexingJob.perform_later(self, :delayed_update_runestones!, changed_runestone_indexes.map { |s| [s.name, s.dictionary] })
+    end
+    
+    def delayed_update_runestones!(indexes)
+      update_runestones!(indexes.map { |name, dictionary| runestone_settings[name][dictionary] })
+    end
+    
+    def update_runestones!(indexes = nil)
+      if indexes.nil?
+        indexes = runestone_settings.values.map(&:values).flatten
+      end
+      
       conn = Runestone::Model.connection
-      self.runestone_settings.each do |index_name, settings|
-        settings.each do |setting|
-          next if if_changed && !setting.changed?(self)
-          rdata = setting.extract_attributes(self)
+      indexes.each do |setting|
+        rdata = setting.extract_attributes(self)
 
-          if conn.execute(<<-SQL).cmd_tuples == 0
-              UPDATE #{Runestone::Model.quoted_table_name}
-              SET
-                data = #{conn.quote(conn.send(:type_map).lookup('jsonb').serialize(rdata))},
-                vector = #{setting.vectorize(rdata).join(' || ')}
-              WHERE record_type = #{conn.quote(conn.send(:type_map).lookup('varchar').serialize(self.class.base_class.name))}
-              AND record_id = #{conn.quote(conn.send(:type_map).lookup('integer').serialize(id))}
-              AND name #{index_name == :default ? 'IS NULL' : "= " + conn.quote(conn.send(:type_map).lookup('integer').serialize(index_name))}
-              AND dictionary = #{conn.quote(conn.send(:type_map).lookup('integer').serialize(setting.dictionary))}
-              SQL
-            create_runestones!
-          else
-            Runestone::Corpus.add(*setting.corpus(rdata))
-          end
-
+        if conn.execute(<<-SQL).cmd_tuples == 0
+            UPDATE #{Runestone::Model.quoted_table_name}
+            SET
+              data = #{conn.quote(conn.send(:type_map).lookup('jsonb').serialize(rdata))},
+              vector = #{setting.vectorize(rdata).join(' || ')}
+            WHERE record_type = #{conn.quote(conn.send(:type_map).lookup('varchar').serialize(self.class.base_class.name))}
+            AND record_id = #{conn.quote(conn.send(:type_map).lookup('integer').serialize(id))}
+            AND name #{setting.name == :default ? 'IS NULL' : "= " + conn.quote(conn.send(:type_map).lookup('integer').serialize(setting.name))}
+            AND dictionary = #{conn.quote(conn.send(:type_map).lookup('integer').serialize(setting.dictionary))}
+            SQL
+          create_runestones!
+        else
+          Runestone::Corpus.add(*setting.corpus(rdata))
         end
+
       end
     end
 

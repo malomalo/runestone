@@ -2,6 +2,13 @@ require 'test_helper'
 
 class QueryTest < ActiveSupport::TestCase
 
+  test "::search(query) doesn't modify the query string" do
+    query = 'Seaerch For tHis'
+    Runestone::Model.search(query)
+    
+    assert_equal 'Seaerch For tHis', query
+  end
+
   test '::search(query)' do
     query = Runestone::Model.search('seaerch for this')
 

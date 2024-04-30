@@ -5,7 +5,7 @@ class Runestone::WebSearch::Parser
   include StreamParser
   
   def initialize(query)
-    @source = Runestone.normalize!(query)
+    @source = Runestone.normalize(query)
     
     # TODO:
     # For now we can't search for tokens, i think we will need to use

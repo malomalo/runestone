@@ -106,6 +106,14 @@ Additionally you can highlight the results. When this is done each result will h
 Runestone::Model.highlight(@results, "needle")
 ```
 
+### Reindexing
+
+Helpers are avaiable if you need to reindex your models.
+
+To reindex a Model run `Model.reindex_runestones!`. This will also remove any Runestones of any record that has been deleted if necessary.
+
+To simply reindex a single record: `record.reindex_runestones!`
+
 ## Configuration
 
 ### Synonym

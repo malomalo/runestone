@@ -36,7 +36,7 @@ module Runestone::ActiveRecord
         self.runestone_settings[name][dictionary.to_sym] = Runestone::Settings.new(base_class.name, name: name, dictionary: dictionary, &block)
       end
 
-      def reindex!
+      def reindex_runestones!
         conn = Runestone::Model.connection
         model_table = conn.quote_table_name(table_name)
         
@@ -51,7 +51,7 @@ module Runestone::ActiveRecord
             AND #{model_table}.id IS NULL;
         SQL
 
-        find_each { |r| r.update_runestones! }
+        find_each { |r| r.reindex_runestones! }
       end
 
       def highlights(name: :default, dictionary: nil)
@@ -147,6 +147,7 @@ module Runestone::ActiveRecord
 
       end
     end
+    alias reindex_runestones! update_runestones!
 
   end
 end

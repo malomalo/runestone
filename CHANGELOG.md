@@ -1,6 +1,12 @@
-# Changelog
+## Edge
 
-HEAD
-----
-* Fixed issue where the delayed_indexing job wasn't running for updates
-* When delayed indexing runs it will only update indexes that have changed
+New Features:
+
+Major Changes:
+- When delayed indexing runs it will only update the indexes that need updated
+- `reindex!` renamed to `reindex_runestones!` to prevent naming collisons and `reindex_runestones!` was added as a instance function on Models
+
+Minor Changes:
+
+Bugfixes:
+- Fixed issue where delayed indexing wasn't updating the indexes

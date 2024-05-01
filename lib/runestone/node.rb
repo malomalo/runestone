@@ -10,7 +10,8 @@ class Runestone::Node
     false
   end
 
-  def prefix!(mode = :last)
+  def prefix(mode)
+    self
   end
 
   def corpus(set = Set.new)

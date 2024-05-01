@@ -1,6 +1,6 @@
 class Runestone::Node::Phrase < Runestone::Node
 
-  attr_accessor :values, :prefix, :negative, :distance
+  attr_accessor :values, :negative, :distance
 
   def initialize(*values, prefix: false, negative: false, distance: nil)
     @values = values

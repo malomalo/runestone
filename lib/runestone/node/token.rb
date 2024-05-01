@@ -1,6 +1,6 @@
 class Runestone::Node::Token < Runestone::Node
   
-  attr_accessor :value, :prefix, :negative, :alts
+  attr_accessor :value, :negative, :alts
 
   def initialize(value, prefix: false, negative: false, alts: nil)
     @value = value
@@ -12,7 +12,7 @@ class Runestone::Node::Token < Runestone::Node
   def to_s
     if negative
       "!#{value}"
-    elsif prefix
+    elsif @prefix
       if alts.empty?
         "#{value}:*"
       else
@@ -32,8 +32,12 @@ class Runestone::Node::Token < Runestone::Node
     alts.each { |alt| yield(alt) }
   end
   
-  def prefix!(mode = nil)
-    @prefix = true
+  def prefix(mode)
+    if mode != :none && !@negative && !@prefix
+      Token.new(@value, prefix: true, negative: @negative, alts: @alts)
+    else
+      self
+    end
   end
   
   def corpus(set = Set.new)

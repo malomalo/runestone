@@ -16,8 +16,18 @@ class Runestone::Node::And < Runestone::Node::Boolean
     negative ? "!#{v}" : v
   end
 
-  def prefix!(mode = :last)
-    values.last.prefix!(mode)
+  def prefix(mode)
+    case mode
+    when :last
+      last = @values.last
+      new_and = And.new(*@values[0..-2])
+      new_and << last.prefix(mode)
+      new_and
+    when :all
+      And.new(*values.map { |node| node.prefix(mode) })
+    else
+      self
+    end
   end
 
   def synonymize

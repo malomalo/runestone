@@ -21,14 +21,19 @@ module Runestone::ActiveRecord
           class_eval do
             has_many :runestones, class_name: 'Runestone::Model', as: :record, dependent: :destroy
             
+            before_save { @runestone_must_reindex = changed_runestone_indexes }
             case runner
             when :active_job
               after_commit :create_runestones, on: :create
-              after_commit :update_runestones, on: :update
+              after_commit on: :update do
+                 update_runestones(@runestone_must_reindex) 
+               end
             else
               after_create :create_runestones!
-              after_update { update_runestones!(changed_runestone_indexes) }
+              after_update { update_runestones!(@runestone_must_reindex) }
             end
+            after_commit { @runestone_must_reindex = nil }
+            after_rollback { @runestone_must_reindex = nil }
           end
         end
         
@@ -51,7 +56,7 @@ module Runestone::ActiveRecord
             AND #{model_table}.id IS NULL;
         SQL
 
-        find_each { |r| r.reindex_runestones! }
+        find_each(&:reindex_runestones!)
       end
 
       def highlights(name: :default, dictionary: nil)
@@ -113,8 +118,12 @@ module Runestone::ActiveRecord
       changed_indexes
     end
     
-    def update_runestones
-      Runestone::IndexingJob.perform_later(self, :delayed_update_runestones!, changed_runestone_indexes.map { |s| [s.name, s.dictionary] })
+    def update_runestones(indexes = nil)
+      if indexes.nil?
+        indexes = runestone_settings.values.map(&:values).flatten
+      end
+      
+      Runestone::IndexingJob.perform_later(self, :delayed_update_runestones!, indexes.map { |s| [s.name, s.dictionary] })
     end
     
     def delayed_update_runestones!(indexes)
@@ -133,7 +142,7 @@ module Runestone::ActiveRecord
         if conn.execute(<<-SQL).cmd_tuples == 0
             UPDATE #{Runestone::Model.quoted_table_name}
             SET
-              data = #{conn.quote(conn.send(:type_map).lookup('jsonb').serialize(rdata))},
+              data = #{conn.quote(conn.send(:type_map).lookup('json').serialize(rdata))},
               vector = #{setting.vectorize(rdata).join(' || ')}
             WHERE record_type = #{conn.quote(conn.send(:type_map).lookup('varchar').serialize(self.class.base_class.name))}
             AND record_id = #{conn.quote(conn.send(:type_map).lookup('integer').serialize(id))}

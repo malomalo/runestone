@@ -18,8 +18,13 @@ class Runestone::Node::Or < Runestone::Node::Boolean
     negative ? "!(#{v})" : v
   end
 
-  def prefix!(mode = :last)
-    values.each { |node| node.prefix!(mode) }
+  def prefix(mode)
+    case mode
+    when :last, :all
+      Or.new(*values.map { |node| node.prefix(mode) })
+    else
+      self
+    end
   end
 
   def synonymize

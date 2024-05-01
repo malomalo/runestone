@@ -10,9 +10,12 @@ class Runestone::WebSearch
     @root = root_node
   end
 
-  # prefix options: :all, :last, :none (default: :last)
-  def self.parse(query, prefix: :last)
-    Runestone::WebSearch::Parser.parse(query, prefix: prefix)
+  def self.parse(query)
+    Runestone::WebSearch::Parser.parse(query)
+  end
+  
+  def prefix(mode = :last)
+    Runestone::WebSearch.new(root.prefix(mode))
   end
   
   def typos

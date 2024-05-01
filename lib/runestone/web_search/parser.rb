@@ -15,9 +15,7 @@ class Runestone::WebSearch::Parser
     seek(0)
   end
 
-  def parse(prefix: :last)
-    prefix ||= :last
-
+  def parse
     @stack = []
     @query = [Runestone::Node::And.new]
 
@@ -61,8 +59,7 @@ class Runestone::WebSearch::Parser
         else
           @query.last << Runestone::Node::Token.new(
             match,
-            negative: knot,
-            prefix: !knot && prefix == :all
+            negative: knot
           )
         end
       end
@@ -73,10 +70,16 @@ class Runestone::WebSearch::Parser
       @query.pop if @query.last.values.empty?
     end
 
-    if @stack.last == :or
+    case @stack.last
+    when :or
       @stack.pop
       phrase = @query.pop
       @query.last << phrase
+    when :double_quote
+      if @query.size > 1
+        phrase = @query.pop
+        @query.last << phrase
+      end
     end
 
     root = if @query.last.is_a?(Runestone::Node::Boolean) && @query.last.size == 1
@@ -84,7 +87,6 @@ class Runestone::WebSearch::Parser
     else
       @query.last
     end
-    root.prefix!(:last) if prefix == :last
     
     Runestone::WebSearch.new(root)
   end

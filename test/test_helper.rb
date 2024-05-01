@@ -26,7 +26,8 @@ ActiveJob::Base.logger = nil
 
 # Setup the test db
 ActiveSupport.test_order = :random
-require File.expand_path('../database', __FILE__)
+require File.expand_path('../schema_mock.rb', __FILE__)
+require File.expand_path('../../db/migrate/20181101150207_create_runestone_tables', __FILE__)
 
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 
@@ -36,6 +37,7 @@ $debugging = false
 class ActiveSupport::TestCase
   
   include ActiveJob::TestHelper
+  include ActiveRecord::SchemaSetup
   
   # File 'lib/active_support/testing/declarative.rb'
   def self.test(name, &block)
@@ -55,7 +57,11 @@ class ActiveSupport::TestCase
     super
     Runestone.synonyms.clear
     Runestone::Model.connection.execute('DELETE FROM runestone_corpus')
-    ActiveRecord::Base.subclasses.reject{|k| k.name.start_with?('ActiveRecord') }.each(&:delete_all)
+    ActiveRecord::Base.subclasses.reject{ |k| k.name.start_with?('ActiveRecord') }.each do |model|
+      if ActiveRecord::Base.connection.table_exists?(model.table_name)
+        model.delete_all
+      end
+    end
   end
   
   def debug
@@ -123,9 +129,9 @@ class ActiveSupport::TestCase
   end
 
   def sql_equal(expected, sql)
-    sql = sql.strip.gsub(/"(\w+)"/, '\1').gsub(/\(\s+/, '(').gsub(/\s+\)/, ')').gsub(/[\s|\n]+/, ' ')
+    sql = sql.strip.gsub(/"(\w+)"/, '\1').gsub(/\(\s+/, '(').gsub(/\s+\)/, ')').gsub(/\s+/, ' ')
     if expected.is_a?(String)
-      expected = Regexp.new(Regexp.escape(expected.strip.gsub(/"(\w+)"/, '\1').gsub(/\(\s+/, '(').gsub(/\s+\)/, ')').gsub(/[\s|\n]+/, ' ')), Regexp::IGNORECASE)
+      expected = Regexp.new(Regexp.escape(expected.strip.gsub(/"(\w+)"/, '\1').gsub(/\(\s+/, '(').gsub(/\s+\)/, ')').gsub(/\s+/, ' ')), Regexp::IGNORECASE)
     end
     
     expected.match(sql)

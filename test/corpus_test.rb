@@ -1,6 +1,23 @@
 require 'test_helper'
 
 class CorpusTest < ActiveSupport::TestCase
+
+  schema do
+    create_table :addresses, id: :uuid, force: :cascade do |t|
+      t.string  "name"
+      t.string  "metadata"
+      t.uuid    "property_id"
+    end
+  end
+  
+  class Address < ActiveRecord::Base
+    belongs_to :property
+
+    runestone do
+      index 'name'
+      attribute(:name)
+    end
+  end
   
   test 'similar_words' do
     Address.create(name: 'Address name broccolini')

@@ -65,12 +65,14 @@ module Runestone
     syn[last].uniq!
   end
   
+  # prefix options: :all, :last, :none (default: :last)
   def search(query, dictionary: nil, prefix: :last, normalization: nil)
-    exact_search = Runestone::WebSearch.parse(query, prefix: prefix)
-    typo_search = exact_search.typos
+    exact_search = Runestone::WebSearch.parse(query)
+    prefix_search = exact_search.prefix(prefix)
+    typo_search = prefix_search.typos
     syn_search = typo_search.synonymize
     
-    tsqueries = [exact_search, typo_search, syn_search].map(&:to_s).uniq.map do |q|
+    tsqueries = [exact_search, prefix_search, typo_search, syn_search].map(&:to_s).uniq.map do |q|
       ts_query(q, dictionary: dictionary)
     end
     

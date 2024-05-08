@@ -29,4 +29,5 @@ Gem::Specification.new do |s|
   # Runtime
   s.add_runtime_dependency 'arel-extensions', '>= 7.0.0'
   s.add_runtime_dependency 'activerecord', '>= 7.0'
+  s.add_runtime_dependency 'stream_parser', ">= 0.4"
 end

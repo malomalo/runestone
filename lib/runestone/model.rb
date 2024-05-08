@@ -60,7 +60,7 @@ class Runestone::Model < ActiveRecord::Base
   def self.get_highlights(words, query, prefix: nil, dictionary: nil)
     dictionary ||= Runestone.dictionary
     
-    query = Arel::Nodes::TSQuery.new(Runestone::WebSearch.parse(query, prefix: prefix).typos.synonymize.to_s, language: dictionary).to_sql
+    query = Arel::Nodes::TSQuery.new(Runestone::WebSearch.parse(query).prefix(prefix).typos.synonymize.to_s, language: dictionary).to_sql
     connection.exec_query(<<-SQL).cast_values
       SELECT ts_headline(#{connection.quote(dictionary)}, words, #{query}, 'ShortWord=2')
       FROM unnest(ARRAY[ #{words.map{ |t| connection.quote(t) }.join(', ')} ]::varchar[]) AS words

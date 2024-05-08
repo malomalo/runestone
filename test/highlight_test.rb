@@ -2,6 +2,40 @@ require 'test_helper'
 
 class HighlightTest < ActiveSupport::TestCase
 
+  schema do
+    create_table :addresses, id: :uuid, force: :cascade do |t|
+      t.string  "name"
+      t.string  "metadata"
+      t.uuid    "property_id"
+    end
+    
+    create_table :properties, id: :uuid, force: :cascade do |t|
+      t.string  "name",                 limit: 255
+      t.string  "metadata"
+    end
+  end
+  
+  class Address < ActiveRecord::Base
+    belongs_to :property
+
+    runestone do
+      index 'name'
+      attribute(:name)
+    end
+  end
+
+  class Property < ActiveRecord::Base
+    has_many :addresses, autosave: true
+
+    runestone do
+      index :name
+      index 'addresses.name', weight: 3
+
+      attribute(:name)
+      attribute(:addresses) { addresses.map{ |a| a&.attributes&.slice('id', 'name') } }
+    end
+  end
+
   test '::highlights(query)' do
     Property.create(name: 'Empire state building', addresses: [Address.create(name: 'address uno')])
     Property.create(name: 'Big state building', addresses: [Address.create(name: 'address of state duo')])

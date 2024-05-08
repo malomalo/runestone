@@ -43,4 +43,10 @@ module Runestone::Corpus
     Runestone.typo_tolerances.find { |k,v| v.member?(word.length) }&.first || 0
   end
   
+  def self.all
+    Runestone::Model.connection.execute(<<-SQL).to_a
+      SELECT word FROM runestone_corpus
+    SQL
+  end
+  
 end

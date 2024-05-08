@@ -1,6 +1,6 @@
 class Runestone::Settings
 
-  attr_reader :indexes, :dictionary
+  attr_reader :name, :dictionary, :indexes
   
   def initialize(model, name: , dictionary: , &block)
     @name = name
@@ -13,17 +13,15 @@ class Runestone::Settings
     @indexes[weight] = args.map(&:to_s)
   end
 
-  def attribute(*names, &block)
-    deps = if block_given? and names.length > 2
+  def attribute(*names, on: nil, &block)
+    if block_given? and names.length > 1
       raise ArgumentError.new('Cannot pass multiple attribute names if block given')
-    else
-      names.length > 1 ? names.pop : names.first
     end
-    deps = deps.to_s if !deps.is_a?(Proc)
+    on = on.to_s if on && !on.is_a?(Proc)
 
     @attributes ||= {}
     names.each do |name|
-      @attributes[name.to_sym] = [block ? block : nil, deps]
+      @attributes[name.to_sym] = [block ? block : nil, on]
     end
   end
   alias :attributes :attribute
@@ -42,15 +40,64 @@ class Runestone::Settings
     remove_nulls(attributes)
   end
 
+  def record_changed_for_dependency?(record, name, on)
+    case on
+    when Proc
+      record.instance_exec(&on)
+    when String, Symbol
+      record.send(on)
+    when Array
+      dep.detect { |d| record_changed_for_dependency?(record, name, d) }
+    else
+      if record.attribute_names.include?(name)
+        record.changes.has_key?(name)
+      elsif record._reflections[name]
+        association = record.send(:association_instance_get, name.to_sym)
+        association && Array.wrap(association.target).any? {|r| r.changed_for_autosave?() }
+      else
+        ActiveRecord::Base.logger&.warn do 
+          color("WARNING", RED, bold: true) +
+          " Runestone index "+
+          (self.name == "default" ? "\"#{self.name}\" " : '') +
+          "on \"#{self.class.name}\" can't determine when to update attribute \"#{name}\", provide \"on:\" option to stop update when unnceessary"
+        end
+        true
+      end
+    end
+  end
+  
+  # ANSI sequence modes
+  MODES = {
+    clear:     0,
+    bold:      1,
+    italic:    3,
+    underline: 4,
+  }
+
+  # ANSI sequence colors
+  BLACK   = "\e[30m"
+  RED     = "\e[31m"
+  GREEN   = "\e[32m"
+  YELLOW  = "\e[33m"
+  BLUE    = "\e[34m"
+  MAGENTA = "\e[35m"
+  CYAN    = "\e[36m"
+  WHITE   = "\e[37m"
+  
+  def color(text, color, mode_options = {}) # :doc:
+    mode = mode_from(mode_options)
+    clear = "\e[#{MODES[:clear]}m"
+    "#{mode}#{color}#{text}#{clear}"
+  end
+  
+  def mode_from(options)
+    modes = MODES.values_at(*options.compact_blank.keys)
+    "\e[#{modes.join(";")}m" if modes.any?
+  end
+  
   def changed?(record)
     @attributes.detect do |name, value|
-      if value[1].is_a?(Proc)
-        record.instance_exec(&value[1])
-      elsif record.attribute_names.include?(value[1])
-        record.previous_changes.has_key?(value[1])
-      elsif record._reflections[value[1]] && association = record.association(value[1])
-        association.loaded? && association.changed_for_autosave?
-      end
+      record_changed_for_dependency?(record, name.to_s, value[1])
     end
   end
   

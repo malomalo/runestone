@@ -1,6 +1,8 @@
 require 'arel/extensions'
 
 module Runestone
+  
+  autoload :Node, "#{File.dirname(__FILE__)}/runestone/node"
   autoload :Model, "#{File.dirname(__FILE__)}/runestone/model"
   autoload :Settings, "#{File.dirname(__FILE__)}/runestone/settings"
   autoload :WebSearch, "#{File.dirname(__FILE__)}/runestone/web_search"
@@ -18,14 +20,16 @@ module Runestone
   end
   
   def self.normalize(string)
-    string = string.downcase
-    string = string.unicode_normalize!
+    string = string.strip
+    string.downcase!
+    string.unicode_normalize!
     string
   rescue Encoding::CompatibilityError
     string
   end
 
   def self.normalize!(string)
+    string.strip!
     string.downcase!
     string.unicode_normalize!
   rescue Encoding::CompatibilityError
@@ -61,12 +65,14 @@ module Runestone
     syn[last].uniq!
   end
   
+  # prefix options: :all, :last, :none (default: :last)
   def search(query, dictionary: nil, prefix: :last, normalization: nil)
-    exact_search = Runestone::WebSearch.parse(query, prefix: prefix)
-    typo_search = exact_search.typos
+    exact_search = Runestone::WebSearch.parse(query)
+    prefix_search = exact_search.prefix(prefix)
+    typo_search = prefix_search.typos
     syn_search = typo_search.synonymize
     
-    tsqueries = [exact_search, typo_search, syn_search].map(&:to_s).uniq.map do |q|
+    tsqueries = [exact_search, prefix_search, typo_search, syn_search].map(&:to_s).uniq.map do |q|
       ts_query(q, dictionary: dictionary)
     end
     

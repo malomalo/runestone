@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Engine < Rails::Engine
   config.runestone = ActiveSupport::OrderedOptions.new
 

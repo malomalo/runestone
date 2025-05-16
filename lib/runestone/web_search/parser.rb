@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'stream_parser'
 
 class Runestone::WebSearch::Parser

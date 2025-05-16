@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Runestone::Corpus
 
   def self.add(*words)

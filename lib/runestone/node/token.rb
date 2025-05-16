@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Node::Token < Runestone::Node
   
   attr_accessor :value, :negative, :alts

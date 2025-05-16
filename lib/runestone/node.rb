@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Node
 
   autoload :Or, "#{File.dirname(__FILE__)}/node/or"

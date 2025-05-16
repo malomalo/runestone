@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::WebSearch::PartialMatch
 
   attr_accessor :start_index, :end_index, :substitution

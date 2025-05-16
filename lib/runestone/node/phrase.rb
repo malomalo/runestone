@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Node::Phrase < Runestone::Node
 
   attr_accessor :values, :negative, :distance

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Node::Or < Runestone::Node::Boolean
 
   def to_s

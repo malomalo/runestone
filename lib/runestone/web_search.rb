@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::WebSearch
   
   autoload :Parser, "#{File.dirname(__FILE__)}/web_search/parser"

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Settings
 
   attr_reader :name, :dictionary, :indexes
@@ -51,8 +53,7 @@ class Runestone::Settings
     else
       if record.attribute_names.include?(name)
         record.changes.has_key?(name)
-      elsif record._reflections[name]
-        association = record.send(:association_instance_get, name.to_sym)
+      elsif association = record.send(:association_instance_get, name.to_sym)
         association && Array.wrap(association.target).any? {|r| r.changed_for_autosave?() }
       else
         ActiveRecord::Base.logger&.warn do 

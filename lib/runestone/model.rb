@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Model < ActiveRecord::Base
 
   self.table_name = :runestones

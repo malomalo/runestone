@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Runestone::Node::Boolean < Runestone::Node
 
   attr_accessor :values, :negative

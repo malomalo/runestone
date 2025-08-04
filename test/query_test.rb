@@ -292,7 +292,6 @@ class QueryTest < ActiveSupport::TestCase
   end
   
   test "::search with special chars" do
-    debug do
     assert_sql(<<~SQL, Runestone::Model.search('&').to_sql)
       SELECT
         "runestones".*,
@@ -305,7 +304,6 @@ class QueryTest < ActiveSupport::TestCase
         rank0 DESC,
         rank1 DESC
     SQL
-  end
   end
 
 end

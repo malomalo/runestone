@@ -68,10 +68,10 @@ class QueryTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, query.to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'seaerch & for & james & map'), 16) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'seaerch & for & james & map:*'), 16) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'seaerch & for & james'' & map'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'seaerch & for & james'' & map:*'), 16) AS rank1
       FROM "runestones"
-      WHERE "runestones"."vector" @@ to_tsquery('runestone', 'seaerch & for & james & map:*')
+      WHERE "runestones"."vector" @@ to_tsquery('runestone', 'seaerch & for & james'' & map:*')
       ORDER BY rank0 DESC
     SQL
   end
@@ -265,7 +265,7 @@ class QueryTest < ActiveSupport::TestCase
     SQL
   end
   
-  test "::typos with special chars" do
+  test "::typos" do
     Runestone::Corpus.add(*%w{avenue aveneue avenue)})
     
     words = "AVENUE AV AVE AVN AVEN AVENU AVNUE".split(/\s+/)
@@ -278,17 +278,34 @@ class QueryTest < ActiveSupport::TestCase
         "runestones".*,
         ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue'), 16) AS rank0,
         ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:*'), 16) AS rank1,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue'), 16) AS rank2,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | av | ave | avn | aven | avenu | avnue'), 16) AS rank3
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | avenue)'), 16) AS rank2,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | avenue) | av | ave | avn | aven | avenu | avnue'), 16) AS rank3
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('runestone', 'avenue:* | aveneue | av | ave | avn | aven | avenu | avnue')
+        "runestones"."vector" @@ to_tsquery('runestone', 'avenue:* | aveneue | avenue) | av | ave | avn | aven | avenu | avnue')
       ORDER BY
         rank0 DESC,
         rank1 DESC,
         rank2 DESC,
         rank3 DESC
     SQL
+  end
+  
+  test "::search with special chars" do
+    debug do
+    assert_sql(<<~SQL, Runestone::Model.search('&').to_sql)
+      SELECT
+        "runestones".*,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '''&'''), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '''&'':*'), 16) AS rank1
+      FROM "runestones"
+      WHERE
+        "runestones"."vector" @@ to_tsquery('runestone', '''&'':*')
+      ORDER BY
+        rank0 DESC,
+        rank1 DESC
+    SQL
+  end
   end
 
 end

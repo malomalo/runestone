@@ -5,7 +5,7 @@ class Runestone::Node::Phrase < Runestone::Node
   attr_accessor :values, :negative, :distance
 
   def initialize(*values, prefix: false, negative: false, distance: nil)
-    @values = values
+    @values = values.map { |v| v.is_a?(Token) ? v : Token.new(v) }
     @prefix = prefix
     @negative = negative
     @distance = distance

@@ -12,6 +12,7 @@ module Runestone::PsqlSchemaDumper
       ALTER MAPPING FOR hword, hword_part, word
       WITH unaccent, simple;
   SQL
+  
     RB
     stream
   end

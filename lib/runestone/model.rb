@@ -53,7 +53,10 @@ class Runestone::Model < ActiveRecord::Base
           end
         }
       else
-        str[key] = hlights.shift
+        hlights.shift.scan(/\<\/?b\>/) do |match|
+          data[key].insert($~.begin(0), $&)
+        end
+        str[key] = data[key]
       end
     end
     str
@@ -63,9 +66,10 @@ class Runestone::Model < ActiveRecord::Base
     dictionary ||= Runestone.dictionary
     
     query = Arel::Nodes::TSQuery.new(Runestone::WebSearch.parse(query).prefix(prefix).typos.synonymize.to_s, language: dictionary).to_sql
+    words = words.map{ |t| connection.quote(t) }.join(', ')
     connection.exec_query(<<-SQL).cast_values
       SELECT ts_headline(#{connection.quote(dictionary)}, words, #{query}, 'ShortWord=2')
-      FROM unnest(ARRAY[ #{words.map{ |t| connection.quote(t) }.join(', ')} ]::varchar[]) AS words
+      FROM unnest(ARRAY[ #{words.downcase} ]::varchar[]) AS words
     SQL
   end
   

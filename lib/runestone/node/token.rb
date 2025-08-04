@@ -11,20 +11,24 @@ class Runestone::Node::Token < Runestone::Node
     @alts = alts || []
   end
 
+  def quote(token)
+    token.index(/\(|\)|:|\||!|\&|\*|<->/) ? "'#{token}'" : token
+  end
+  
   def to_s
     if negative
-      "!#{value}"
+      "!#{quote(value)}"
     elsif @prefix
       if alts.empty?
-        "#{value}:*"
+        "#{quote(value)}:*"
       else
-        "#{value}:* | #{alts.map(&:to_s).join(' | ')}"
+        "#{quote(value)}:* | #{alts.map(&:to_s).join(' | ')}"
       end
     else
       if alts.empty?
-        value
+        quote(value)
       else
-        "#{value} | #{alts.map(&:to_s).join(' | ')}"
+        "#{quote(value)} | #{alts.map(&:to_s).join(' | ')}"
       end
     end
   end

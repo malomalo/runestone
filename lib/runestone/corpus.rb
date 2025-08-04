@@ -33,7 +33,6 @@ module Runestone::Corpus
         AND levenshtein(runestone_corpus.word, tokens.token_downcased) <= tokens.typo_tolerance
     SQL
     result.each_row do |t, w, l|
-      w.gsub!(/\(|\)|:|\||!|\&|\*/, '')
       next if w == t
       lut[t] ||= []
       lut[t] << w

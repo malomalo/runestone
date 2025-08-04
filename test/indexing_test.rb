@@ -155,7 +155,13 @@ class IndexingTest < ActiveSupport::TestCase
   test 'index Unicode strings get normalized' do
     address = Address.create(name: "on\u0065\u0301")
 
-    assert_equal(["'on\u00e9':1A"], address.reload.runestones.map(&:vector))
+    assert_equal("on\u00e9", address.reload.runestones.first.data['name'])
+    assert_equal("'on\u00e9':1A", address.reload.runestones.first.vector)
+
+    address = Address.create(name: "on\u0065\u0301 two three four five")
+
+    assert_equal("on\u00e9 two three four five", address.reload.runestones.first.data['name'])
+    assert_equal("'five':5A 'four':4A 'one':1A 'three':3A 'two':2A", address.reload.runestones.first.vector)
   end
 
   test 'index gets created on Model.create' do
@@ -310,7 +316,7 @@ class IndexingTest < ActiveSupport::TestCase
       ]
     })
     
-    assert_corpus('2', 'name', 'м')
+    assert_corpus('2', 'name', 'имя')
   end
   
   test 'index always updates when we there is no dependency' do
@@ -348,7 +354,7 @@ class IndexingTest < ActiveSupport::TestCase
       ]
     })
     
-    assert_corpus('2', 'name', 'nombre', 'м')
+    assert_corpus('2', 'name', 'nombre', 'имя')
   end
   
   test 'index doesnt update on Model.update when updates dont affect index (block for attribute, block for depends)' do
@@ -448,11 +454,11 @@ class IndexingTest < ActiveSupport::TestCase
   test "warning message when runestone can't compute dependency for attribute in index" do
     begin
       output = StringIO.new
-      ActiveRecord::Base.logger = Logger.new(output)
+      ActiveRecord::Base.logger = Logger.new(output, level: :warn)
       ActiveRecord::Base.logger.formatter = -> (a,b,c,d) { d }
     
       b = Building.create(name_en: 'name')
-      assert_includes output.string, "\e[1m\e[31mWARNING\e[0m Runestone index on \"Runestone::Settings\" can't determine when to update attribute \"name\", provide \"on:\" option to stop update when unnceessary"
+      assert_includes output.string, "\e[1m\e[31mWARNING\e[0m Runestone index on \"IndexingTest::Building\" can't determine when to update attribute \"name\", provide \"on:\" option to stop update when unnceessary"
     ensure
       ActiveRecord::Base.logger = nil
     end

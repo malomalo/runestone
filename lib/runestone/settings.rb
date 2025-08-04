@@ -60,7 +60,7 @@ class Runestone::Settings
           color("WARNING", RED, bold: true) +
           " Runestone index "+
           (self.name == "default" ? "\"#{self.name}\" " : '') +
-          "on \"#{self.class.name}\" can't determine when to update attribute \"#{name}\", provide \"on:\" option to stop update when unnceessary"
+          "on \"#{record.class.name}\" can't determine when to update attribute \"#{name}\", provide \"on:\" option to stop update when unnceessary"
         end
         true
       end
@@ -129,7 +129,7 @@ class Runestone::Settings
         dig(data, path.to_s.split('.')).each do |value|
           next if !value
           value.to_s.split(/\s+/).each do |word|
-            words << word.downcase.gsub(/\A\W/, '').gsub(/\W\Z/, '')
+            words << word.downcase
           end
         end
       end

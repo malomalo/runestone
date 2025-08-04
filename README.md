@@ -54,23 +54,25 @@ end
 When searching the attribute(s) will be available in `data` on the result(s),
 but only the attributes specified by `index` will indexed and used for searching.
 
-Generally Runestone will automatically update the search index if changes are
-made. This is done by seeing if the corresponding column or association has
-changed. If your search attribute is generated you need to define on the columns
-or associations it depends on.
+Generally Runestone will automatically update the search index only if changes
+are made. This is done by seeing if the corresponding column or association has
+changed. If your attribute is generated dynamically or runestone can't determine
+if the attribute have changed it will update the index on every save. You can
+define a function to indicate if the attribute has change so runestone can only
+update the indexes when needed. For example:
 
 ```ruby
 class User < ApplicationRecord
   runestone do
     # The attribute `:name` is generated from the `name_en` column
-    attribute(:name, :name_en) { name_en }
+    attribute(:name, on: :name_en_changed?) { name_en }
   end
 end
 
 class Building < ApplicationRecord
   runestone do
     # The attribute `:address_numbers` is generated from the association `addresses`
-    attribute(:address_numbers, :addresses) { addresses.map{ |a| a.number } }
+    attribute(:address_numbers, :addresses_changed?) { addresses.map{ |a| a.number } }
   end
 end
 
@@ -79,7 +81,7 @@ class User < ActiveRecord::Base
     index 'name'
     
     # The attribute `:name` is updated when the custom logic proc returns true
-    attribute :name, -> () { ...custom logic... } do
+    attribute :name, on: -> () { ...custom logic... } do
       name
     end
   end

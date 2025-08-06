@@ -22,13 +22,13 @@ class Runestone::Node::Token < Runestone::Node
       if alts.empty?
         "#{quote(value)}:*"
       else
-        "#{quote(value)}:* | #{alts.map(&:to_s).join(' | ')}"
+        "#{quote(value)}:* | #{alts.map{|a| quote(a)}.join(' | ')}"
       end
     else
       if alts.empty?
         quote(value)
       else
-        "#{quote(value)} | #{alts.map(&:to_s).join(' | ')}"
+        "#{quote(value)} | #{alts.map{|a| quote(a)}.join(' | ')}"
       end
     end
   end

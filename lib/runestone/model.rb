@@ -38,27 +38,23 @@ class Runestone::Model < ActiveRecord::Base
   end
   
   def self.highlight_data(data, hlights, indexes)
-    str = {}
+    str = data.dup
+
     indexes.each do |key, value|
       next unless data[key]
 
       if data[key].is_a?(Hash)
-        str[key] = highlight_data(data[key], hlights, indexes[key])
+        str[key] = highlight_data(data[key], hlights, value)
       elsif data[key].is_a?(Array)
-        str[key] = data[key].map { |i|
-          if i.is_a?(Hash)
-            highlight_data(i, hlights, indexes[key])
-          else
-            hlights.shift
-          end
-        }
+        str[key] = data[key].map { |i| highlight_data(i, hlights, value) }
       else
+        str[key] = data[key].dup
         hlights.shift.scan(/\<\/?b\>/) do |match|
-          data[key].insert($~.begin(0), $&)
+          str[key].insert($~.begin(0), $&)
         end
-        str[key] = data[key]
       end
     end
+
     str
   end
 

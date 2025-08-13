@@ -11,8 +11,9 @@ class Runestone::Node::Token < Runestone::Node
     @alts = alts || []
   end
 
+  # If needed more quoting can add wrap in a single quote ie: "'#{token}'"
   def quote(token)
-    token.index(/\(|\)|:|\||!|\&|\*|<->/) ? "'#{token}'" : token
+    token.gsub(/[\\\(\):\|!\&\*]/) { |a| "\\#{a}" }
   end
   
   def to_s

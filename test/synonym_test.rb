@@ -275,10 +275,10 @@ class SynonymTest < ActiveSupport::TestCase
         "runestones".*,
         ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'and'), 16) AS rank0,
         ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'and:*'), 16) AS rank1,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'and:* | ''&'''), 16) AS rank2
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'and:* | \\&'), 16) AS rank2
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('runestone', 'and:* | ''&''')
+        "runestones"."vector" @@ to_tsquery('runestone', 'and:* | \\&')
       ORDER BY
         rank0 DESC,
         rank1 DESC,

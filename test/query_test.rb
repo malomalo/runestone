@@ -278,11 +278,11 @@ class QueryTest < ActiveSupport::TestCase
         "runestones".*,
         ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue'), 16) AS rank0,
         ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:*'), 16) AS rank1,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | ''avenue)'''), 16) AS rank2,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | ''avenue)'' | av | ave | avn | aven | avenu | avnue'), 16) AS rank3
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | avenue\\)'), 16) AS rank2,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', 'avenue:* | aveneue | avenue\\) | av | ave | avn | aven | avenu | avnue'), 16) AS rank3
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('runestone', 'avenue:* | aveneue | ''avenue)'' | av | ave | avn | aven | avenu | avnue')
+        "runestones"."vector" @@ to_tsquery('runestone', 'avenue:* | aveneue | avenue\\) | av | ave | avn | aven | avenu | avnue')
       ORDER BY
         rank0 DESC,
         rank1 DESC,
@@ -295,11 +295,24 @@ class QueryTest < ActiveSupport::TestCase
     assert_sql(<<~SQL, Runestone::Model.search('&').to_sql)
       SELECT
         "runestones".*,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '''&'''), 16) AS rank0,
-        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '''&'':*'), 16) AS rank1
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '\\&'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '\\&:*'), 16) AS rank1
       FROM "runestones"
       WHERE
-        "runestones"."vector" @@ to_tsquery('runestone', '''&'':*')
+        "runestones"."vector" @@ to_tsquery('runestone', '\\&:*')
+      ORDER BY
+        rank0 DESC,
+        rank1 DESC
+    SQL
+    
+    assert_sql(<<~SQL, Runestone::Model.search('399 "\\():|!&*" inter\\').to_sql)
+      SELECT
+        "runestones".*,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '399 & \\\\\\(\\)\\:\\|\\!\\&\\* & inter\\\\'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '399 & \\\\\\(\\)\\:\\|\\!\\&\\* & inter\\\\:*'), 16) AS rank1
+      FROM "runestones"
+      WHERE
+        "runestones"."vector" @@ to_tsquery('runestone', '399 & \\\\\\(\\)\\:\\|\\!\\&\\* & inter\\\\:*')
       ORDER BY
         rank0 DESC,
         rank1 DESC

@@ -10,7 +10,6 @@ SimpleCov.start do
 end
 
 require "minitest/autorun"
-require 'minitest/unit'
 require 'minitest/reporters'
 require 'faker'
 require 'byebug'

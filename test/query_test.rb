@@ -292,6 +292,19 @@ class QueryTest < ActiveSupport::TestCase
   end
   
   test "::search with special chars" do
+    assert_sql(<<~SQL, Runestone::Model.search('-').to_sql)
+      SELECT
+        "runestones".*,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '\\-'), 16) AS rank0,
+        ts_rank_cd("runestones"."vector", to_tsquery('runestone', '\\-:*'), 16) AS rank1
+      FROM "runestones"
+      WHERE
+        "runestones"."vector" @@ to_tsquery('runestone', '\\-:*')
+      ORDER BY
+        rank0 DESC,
+        rank1 DESC
+    SQL
+
     assert_sql(<<~SQL, Runestone::Model.search('&').to_sql)
       SELECT
         "runestones".*,

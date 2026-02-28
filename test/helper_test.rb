@@ -11,12 +11,12 @@ class WebSearchTest < ActiveSupport::TestCase
   
   test '::parse(weird query)' do
     assert_equal "supernovae <-> stars", Runestone::WebSearch.parse('"supernovae stars').to_s
-    assert_equal "signal", Runestone::WebSearch.parse('signal -').to_s
+    assert_equal "signal & \\-", Runestone::WebSearch.parse('signal -').to_s
     assert_equal "signal", Runestone::WebSearch.parse('signal -"').to_s
     assert_equal "signal", Runestone::WebSearch.parse('signal -""').to_s
     
     assert_equal "super & supernovae <-> stars", Runestone::WebSearch.parse('super "supernovae stars').to_s
-    assert_equal "super & signal", Runestone::WebSearch.parse('super signal -').to_s
+    assert_equal "super & signal & \\-", Runestone::WebSearch.parse('super signal -').to_s
     assert_equal "super & signal", Runestone::WebSearch.parse('super signal -"').to_s
     assert_equal "super & signal", Runestone::WebSearch.parse('super signal -""').to_s
   end

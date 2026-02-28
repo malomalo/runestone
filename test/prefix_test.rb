@@ -26,19 +26,19 @@ class PrefixTest < ActiveSupport::TestCase
   test '::parse(weird query, prefix: :none)' do
     assert_equal "signal:*", Runestone::WebSearch.parse('signal').prefix(:last).to_s
     assert_equal "super & supernovae <-> stars", Runestone::WebSearch.parse('super "supernovae stars').prefix(:last).to_s
-    assert_equal "super & signal:*", Runestone::WebSearch.parse('super signal -').prefix(:last).to_s
+    assert_equal "super & signal & \\-:*", Runestone::WebSearch.parse('super signal -').prefix(:last).to_s
     assert_equal "super & signal:*", Runestone::WebSearch.parse('super signal -"').prefix(:last).to_s
     assert_equal "super & signal:*", Runestone::WebSearch.parse('super signal -""').prefix(:last).to_s
 
     assert_equal "signal:*", Runestone::WebSearch.parse('signal').prefix(:all).to_s
     assert_equal "super:* & supernovae <-> stars", Runestone::WebSearch.parse('super "supernovae stars').prefix(:all).to_s
-    assert_equal "super:* & signal:*", Runestone::WebSearch.parse('super signal -').prefix(:all).to_s
+    assert_equal "super:* & signal:* & \\-:*", Runestone::WebSearch.parse('super signal -').prefix(:all).to_s
     assert_equal "super:* & signal:*", Runestone::WebSearch.parse('super signal -"').prefix(:all).to_s
     assert_equal "super:* & signal:*", Runestone::WebSearch.parse('super signal -""').prefix(:all).to_s
 
     assert_equal "signal", Runestone::WebSearch.parse('signal').prefix(:none).to_s
     assert_equal "super & supernovae <-> stars", Runestone::WebSearch.parse('super "supernovae stars').prefix(:none).to_s
-    assert_equal "super & signal", Runestone::WebSearch.parse('super signal -').prefix(:none).to_s
+    assert_equal "super & signal & \\-", Runestone::WebSearch.parse('super signal -').prefix(:none).to_s
     assert_equal "super & signal", Runestone::WebSearch.parse('super signal -"').prefix(:none).to_s
     assert_equal "super & signal", Runestone::WebSearch.parse('super signal -""').prefix(:none).to_s
   end

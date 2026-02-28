@@ -74,9 +74,8 @@ class Runestone::WebSearch::Parser
       @query.pop if @query.last.values.empty?
     end
 
-    case @stack.last
+    case @stack.pop
     when :or
-      @stack.pop
       phrase = @query.pop
       @query.last << phrase
     when :double_quote
@@ -84,6 +83,11 @@ class Runestone::WebSearch::Parser
         phrase = @query.pop
         @query.last << phrase
       end
+    when :not
+      @query.last << Runestone::Node::Token.new(
+        "-",
+        negative: false
+      )
     end
 
     root = if @query.last.is_a?(Runestone::Node::Boolean) && @query.last.size == 1

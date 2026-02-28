@@ -13,7 +13,7 @@ class Runestone::Node::Token < Runestone::Node
 
   # If needed more quoting can add wrap in a single quote ie: "'#{token}'"
   def quote(token)
-    token.gsub(/[\\\(\):\|!\&\*]/) { |a| "\\#{a}" }
+    token.gsub(/[\\\(\):\|!\&\*-]/) { |a| "\\#{a}" }
   end
   
   def to_s

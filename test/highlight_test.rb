@@ -30,9 +30,11 @@ class HighlightTest < ActiveSupport::TestCase
     runestone do
       index :name
       index 'addresses.name', weight: 3
+      index :tags, weight: 2
 
       attribute(:name)
       attribute(:addresses) { addresses.map{ |a| a&.attributes&.slice('id', 'name') } }
+      attribute(:tags) { metadata&.split(',') }
     end
   end
 
@@ -95,5 +97,18 @@ class HighlightTest < ActiveSupport::TestCase
       {"name"=>"Big state building", "addresses"=>[{"id" => duo.id, "name"=>"<b>addréss</b> of state duo"}]}
     ], tsmodels.map(&:highlights))
   end
-  
+
+  test '::highlights(query) with an attribute that is an array of strings' do
+    Property.create(name: 'red barn', metadata: 'rustic,wooden,vintage')
+    Property.create(name: 'blue cottage', metadata: 'modern,vintage,cozy')
+
+    tsmodels = Runestone::Model.search('vintage')
+    Runestone::Model.highlight(tsmodels, 'vintage')
+
+    assert_equal([
+      { "name"=>"red barn", "addresses"=>[], "tags"=>["rustic", "wooden", "<b>vintage</b>"] },
+      { "name"=>"blue cottage", "addresses"=>[], "tags"=>["modern", "<b>vintage</b>", "cozy"] }
+    ], tsmodels.map(&:highlights))
+  end
+
 end

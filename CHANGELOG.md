@@ -4,6 +4,7 @@ New Features:
 Major Changes:
 Minor Changes:
 Bugfixes:
+  - `Runestone::Model.highlight` no longer depends on Postgres returning `unnest` rows in array order. The headline query now orders by `WITH ORDINALITY`, so highlights can't be applied to the wrong string (which could raise `IndexError: index N out of string`).
 
 
 ## 3.0

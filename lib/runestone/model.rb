@@ -70,9 +70,11 @@ class Runestone::Model < ActiveRecord::Base
     
     query = Arel::Nodes::TSQuery.new(Runestone::WebSearch.parse(query).prefix(prefix).typos.synonymize.to_s, language: dictionary).to_sql
     words = words.map{ |t| connection.quote(t) }.join(', ')
+    # Callers match headlines to words by position, so keep the array's order.
     connection.exec_query(<<-SQL).cast_values
       SELECT ts_headline(#{connection.quote(dictionary)}, words, #{query}, 'ShortWord=2')
-      FROM unnest(ARRAY[ #{words.downcase} ]::varchar[]) AS words
+      FROM unnest(ARRAY[ #{words.downcase} ]::varchar[]) WITH ORDINALITY AS t(words, position)
+      ORDER BY position
     SQL
   end
   

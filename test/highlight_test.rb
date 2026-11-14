@@ -111,4 +111,12 @@ class HighlightTest < ActiveSupport::TestCase
     ], tsmodels.map(&:highlights))
   end
 
+  test '::get_highlights returns a headline for each word in the order given' do
+    words = ['state', 'empire state building', 'big state', 'an address of state duo']
+
+    headlines = Runestone::Model.get_highlights(words, 'state')
+
+    assert_equal words, headlines.map { |h| h.gsub(%r{</?b>}, '') }
+  end
+
 end
